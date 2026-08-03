@@ -9,6 +9,9 @@ export default function Home() {
           <h1 className={styles.title}>Intake Review System</h1>
         </header>
         <nav className={styles.nav}>
+          <Link href="/login" className={styles.link}>
+            Sign In
+          </Link>
           <Link href="/intake" className={styles.link}>
             Submit Intake
           </Link>

@@ -2,41 +2,41 @@
   "name": "integral-take-home",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "^20.19 || ^22.12 || >=24.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
     "db:reset": "prisma migrate reset"
   },
-  "prisma": {
-    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
-  },
   "dependencies": {
     "@libsql/client": "0.17.4",
-    "@prisma/adapter-libsql": "7.8.0",
-    "@prisma/client": "7.8.0",
+    "@prisma/adapter-libsql": "7.9.1",
+    "@prisma/client": "7.9.1",
+    "next": "16.2.12",
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
+  },
+  "devDependencies": {
     "@types/node": "26.0.0",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
+    "dotenv": "17.4.2",
     "eslint": "9.39.2",
-    "eslint-config-next": "16.2.9",
-    "next": "16.2.9",
-    "prisma": "7.8.0",
-    "react": "19.2.7",
-    "react-dom": "19.2.7",
+    "eslint-config-next": "16.2.12",
+    "prisma": "7.9.1",
+    "ts-node": "10.9.2",
     "typescript": "6.0.3"
   },
-  "devDependencies": {
-    "dotenv": "17.4.2",
-    "ts-node": "10.9.2"
-  },
   "overrides": {
-    "postcss": "8.5.15",
-    "@hono/node-server": "1.19.14",
-    "hono": "4.12.31"
+    "postcss": "^8.5.25",
+    "sharp": "^0.35.3"
   }
 }

@@ -22,6 +22,8 @@ Build a web app where:
 
 ## Setup
 
+Requires Node `^20.19 || ^22.12 || >=24.0` (see `.nvmrc` — `nvm use` will pick it up).
+
 1. Clone the repository to your local machine
 2. Copy the environment file: `cp .env.example .env`
 3. Install dependencies: `npm install`
@@ -30,6 +32,12 @@ Build a web app where:
 6. Seed the database: `npm run db:seed`
 7. Start the development server: `npm run dev`
 8. Visit `http://localhost:3000/` in your browser
+9. Sanity check that the database is wired up: `curl http://localhost:3000/api/users`
+   should return the two demo users below
+
+A pre-seeded `dev.db` is checked in, so steps 5 and 6 are no-ops on a fresh clone. Re-seeding
+regenerates record IDs, so `dev.db` will show up as modified in `git status` — that's expected,
+and committing it is fine.
 
 ## Design Inspiration
 
@@ -38,6 +46,11 @@ Design references and mockups are available in the `/public/design-inspiration/`
 - `http://localhost:3000/design-inspiration/[filename]`
 
 These are provided as optional visual guidance. Feel free to implement your own design approach.
+
+**Heads up:** the mockups are from an earlier iteration of this exercise and are intentionally
+not authoritative — they label the submitter role "Client" rather than "Patient", show a
+"Full Address" field that isn't in the schema, and don't show document uploads. Where they
+disagree with this README or `prisma/schema.prisma`, this README and the schema win.
 
 ## Database Schema
 
@@ -50,55 +63,71 @@ The project uses Prisma with SQLite. The schema is defined in `prisma/schema.pri
 
 ### Intake
 
-- Patient information: `clientName`, `clientEmail`, `clientPhone`, `dateOfBirth`, `ssn`
-  - _Note: These field names use "client" prefix but refer to patient data_
+- Applicant information: `clientName`, `clientEmail`, `clientPhone`, `dateOfBirth`, `ssn`
 - Application details: `description`, `notes`
 - Status: `PENDING`, `IN_REVIEW`, `APPROVED`, `REJECTED`
-- Relations: `submittedBy` (User), `reviewer` (User, optional)
-- **Note:** Consider adding a model for document uploads (medical records, insurance cards, prescriptions, ID photos, etc.)
+- Relations: `submittedBy` (User), `reviewer` (User, optional), `documents` (Document)
 
 ### AuditLog
 
-- `action`: Type of action (CREATED, STATUS_CHANGED, VIEWED, ASSIGNED)
+- `action`: Type of action (CREATED, STATUS_CHANGED, VIEWED, ASSIGNED, DOCUMENT_UPLOADED)
 - `details`: JSON string with additional context
 - Relations: `user` (who performed the action), `intake` (which intake)
+
+### Document
+
+- Supporting files uploaded by an applicant (medical records, insurance cards, prescriptions, ID photos, etc.)
+- `fileName`, `fileType`, `fileSize`, `filePath`, `description`
+- Relations: `intake` (cascade deletes with the intake)
+- **Note:** This model is already provided. Your task is the upload handling and file
+  storage, not the schema design.
 
 ## Demo Users
 
 The database is seeded with two demo users:
 
-| Email               | Role     | Organization               |
-| ------------------- | -------- | -------------------------- |
-| `patient@demo.com`  | PATIENT  | (Trial Participant)        |
-| `reviewer@demo.com` | REVIEWER | PharmaCorp Trial Coord.    |
+| Email               | Role     | Organization                 |
+| ------------------- | -------- | ---------------------------- |
+| `patient@demo.com`  | PATIENT  | Trial Participant            |
+| `reviewer@demo.com` | REVIEWER | PharmaCorp Trial Coordinator |
 
 ## Project Structure
 
 ```
 src/
 ├── app/
+│   ├── layout.tsx            # Root layout
+│   ├── globals.css           # Global styles
 │   ├── page.tsx              # Home page with challenge overview
+│   ├── login/
+│   │   └── page.tsx          # Login page (stub)
 │   ├── intake/
-│   │   └── page.tsx          # Patient enrollment application page
+│   │   └── page.tsx          # Patient enrollment application page (stub)
 │   ├── queue/
-│   │   └── page.tsx          # Reviewer queue page
+│   │   └── page.tsx          # Reviewer queue page (stub)
 │   └── api/
 │       ├── intakes/
-│       │   ├── route.ts      # GET all intakes, POST new intake
+│       │   ├── route.ts      # GET all intakes, POST new intake (stub)
 │       │   └── [id]/
-│       │       └── route.ts  # GET/PATCH single intake
+│       │       └── route.ts  # GET/PATCH single intake (stub)
 │       └── users/
-│           └── route.ts      # GET users
+│           └── route.ts      # GET users (implemented — reference example)
 ├── components/
-│   ├── AuditLog.tsx          # Audit trail display
+│   ├── AuditLog.tsx          # Audit trail display (stub)
+│   ├── IntakeDetail.tsx      # Privileged/redacted detail view (stub)
 │   └── Add additional components as needed...
 ├── lib/
 │   └── prisma.ts             # Prisma client singleton
 prisma/
 ├── schema.prisma             # Database schema
 ├── seed.ts                   # Seed script
-└── dev.db                    # SQLite database
+└── migrations/               # Migration history
+dev.db                        # SQLite database (repo root)
 ```
+
+`GET /api/users` is already implemented as a working reference for the Prisma + route
+handler pattern — use it to confirm your setup works before building anything else.
+Everything else marked "(stub)" is yours to fill in.
 
 ## Goals
 
@@ -138,6 +167,7 @@ This approach protects patient privacy during the initial eligibility screening 
 - `npm run dev` - Start Next.js development server
 - `npm run build` - Build for production
 - `npm run lint` - Run ESLint
+- `npm run typecheck` - Run the TypeScript compiler with no emit
 - `npm run db:migrate` - Run Prisma migrations
 - `npm run db:seed` - Seed the database
 - `npm run db:reset` - Reset database and re-seed
@@ -164,7 +194,7 @@ You are welcome to use AI tools (e.g., GitHub Copilot, ChatGPT, Claude) to assis
 
 ## Submission
 
-Once you've completed the challenge, please commit your changes, push them to your own forked GitHub repository, and share the link with us. Alternatively, emailing a zip file of the repository is acceptable.
+Once you've completed the challenge, please commit your changes, push them to your own forked GitHub repository, and share the link with us. Alternatively, emailing a zip file of the repository is acceptable — if you zip it, please exclude `node_modules/` and `.next/`.
 
 ## FAQs
 

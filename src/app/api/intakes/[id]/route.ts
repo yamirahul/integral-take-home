@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 
 // TODO: Implement single intake API endpoints
+// Import the Prisma client when you start querying:
+//   import { prisma } from "@/lib/prisma";
+// See src/app/api/users/route.ts for a working example.
 
 interface RouteParams {
   params: Promise<{ id: string }>;

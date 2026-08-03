@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// TODO: Implement user API endpoints
-
+// This endpoint is implemented for you as a working reference for the
+// Prisma + route handler pattern. The remaining endpoints are yours to fill in.
 export async function GET() {
-  // TODO: Implement fetching users
-  
-  return NextResponse.json({ message: "TODO: Implement GET /api/users" });
+  const users = await prisma.user.findMany({
+    orderBy: { createdAt: "asc" },
+  });
+
+  return NextResponse.json(users);
 }
