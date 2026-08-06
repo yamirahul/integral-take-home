@@ -233,14 +233,7 @@
 }
 
 .linkButton {
-  border: none;
-  background: none;
-  padding: 0;
-  color: #111827;
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: underline;
+  composes: linkButton from "../../styles/shell.module.css";
 }
 
 .attachPicker {

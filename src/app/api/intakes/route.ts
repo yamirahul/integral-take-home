@@ -4,15 +4,14 @@ import { getCurrentUser } from "@/lib/current-user";
 import { listIntakesForUser } from "@/lib/intakes";
 
 // GET /api/intakes — list enrollment applications, scoped by role:
-//   - PATIENT: only the applications they submitted (their own data is never masked —
-//     see the Privacy Model in the README).
+//   - PATIENT: only the applications they submitted.
 //   - REVIEWER: every application, across all patients.
 //
-// NOTE: this does NOT yet apply the redacted/privileged PII masking described in the
-// README's Privacy Model (Goal 5, "Detail View"). Right now it returns full rows to
-// whichever role is allowed to see the application at all. Before this list powers the
-// Reviewer queue UI, wrap the REVIEWER branch in a redaction step so SSN/phone/DOB are
-// masked by default there too.
+// This never returns ssn, clientPhone, dateOfBirth, description, or notes — see the
+// SAFE_INTAKE_SELECT comment in src/lib/intakes.ts. The Review Queue table doesn't
+// display those fields, so this endpoint doesn't fetch them either; the
+// privileged/redacted toggle from the README's Privacy Model (Goal 5) applies to the
+// single-intake detail fetch, which is the only place those fields get requested at all.
 export async function GET() {
   const user = await getCurrentUser();
 

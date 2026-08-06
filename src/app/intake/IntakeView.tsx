@@ -6,13 +6,24 @@
 
 import { useState, FormEvent } from "react";
 import styles from "./intake.module.css";
-import AppHeader from "@/components/AppHeader";
+import AppHeader, { PATIENT_NAV } from "@/components/AppHeader";
 import { shortRef } from "@/lib/format";
 import { IntakeStatus, STATUS_LABEL } from "@/lib/intake-status";
 
-interface IntakeSummary {
+// The "Your Applications" list only ever renders a reference number, status, and
+// submitted date — so that's all it's given. See the SAFE_INTAKE_SELECT comment in
+// src/lib/intakes.ts for why the fuller fields (ssn, clientPhone, etc.) aren't fetched
+// for this list in the first place.
+interface IntakeListItem {
   id: string;
   status: IntakeStatus;
+  createdAt: string;
+}
+
+// POST /api/intakes returns the full created row — this is only used for `lastCreated`
+// (the success screen), which today only displays the id, but keeping the full shape
+// here documents what the endpoint actually returns.
+interface CreatedIntake extends IntakeListItem {
   clientName: string;
   clientEmail: string;
   clientPhone: string;
@@ -20,7 +31,6 @@ interface IntakeSummary {
   ssn: string;
   description: string;
   notes: string | null;
-  createdAt: string;
   updatedAt: string;
 }
 
@@ -69,15 +79,15 @@ export default function IntakeView({
   initialIntakes,
 }: {
   user: { id: string; name: string; email: string };
-  initialIntakes: IntakeSummary[];
+  initialIntakes: IntakeListItem[];
 }) {
   const [view, setView] = useState<"form" | "success">("form");
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [topLevelError, setTopLevelError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [intakes, setIntakes] = useState<IntakeSummary[]>(initialIntakes);
-  const [lastCreated, setLastCreated] = useState<IntakeSummary | null>(null);
+  const [intakes, setIntakes] = useState<IntakeListItem[]>(initialIntakes);
+  const [lastCreated, setLastCreated] = useState<CreatedIntake | null>(null);
   const [confirmingClear, setConfirmingClear] = useState(false);
 
   function updateField<K extends keyof FormState>(key: K, value: string) {
@@ -138,7 +148,7 @@ export default function IntakeView({
         return;
       }
 
-      const created: IntakeSummary = data;
+      const created: CreatedIntake = data;
       setIntakes((prev) => [created, ...prev]);
       setLastCreated(created);
       setView("success");
@@ -150,221 +160,222 @@ export default function IntakeView({
   }
 
   return (
-    <main className={styles.page}>
-      <AppHeader user={user} />
-
-      {view === "form" ? (
-        <div className={styles.card}>
-          <h1 className={styles.cardTitle}>Submit New Intake</h1>
-          <p className={styles.cardSubtitle}>
-            Please provide your personal information below. All fields marked with * are required. Your
-            information is encrypted and securely stored.
-          </p>
-
-          {topLevelError && <p className={styles.topLevelError}>{topLevelError}</p>}
-
-          <form onSubmit={handleSubmit} noValidate>
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="clientName">
-                Full Name <span className={styles.required}>*</span>
-              </label>
-              <input
-                id="clientName"
-                className={`${styles.input} ${fieldErrors.clientName ? styles.inputInvalid : ""}`}
-                placeholder="John Smith"
-                value={form.clientName}
-                onChange={(e) => updateField("clientName", e.target.value)}
-              />
-              {fieldErrors.clientName && <span className={styles.fieldError}>{fieldErrors.clientName}</span>}
-            </div>
-
-            <div className={styles.formGrid}>
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="clientEmail">
-                  Email Address <span className={styles.required}>*</span>
-                </label>
-                <input
-                  id="clientEmail"
-                  type="email"
-                  className={`${styles.input} ${fieldErrors.clientEmail ? styles.inputInvalid : ""}`}
-                  placeholder="john@example.com"
-                  value={form.clientEmail}
-                  onChange={(e) => updateField("clientEmail", e.target.value)}
-                />
-                {fieldErrors.clientEmail && <span className={styles.fieldError}>{fieldErrors.clientEmail}</span>}
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="clientPhone">
-                  Phone Number <span className={styles.required}>*</span>
-                </label>
-                <input
-                  id="clientPhone"
-                  type="tel"
-                  className={`${styles.input} ${fieldErrors.clientPhone ? styles.inputInvalid : ""}`}
-                  placeholder="(555) 123-4567"
-                  value={form.clientPhone}
-                  onChange={(e) => updateField("clientPhone", e.target.value)}
-                />
-                {fieldErrors.clientPhone && <span className={styles.fieldError}>{fieldErrors.clientPhone}</span>}
-              </div>
-            </div>
-
-            <div className={styles.formGrid}>
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="ssn">
-                  Social Security Number <span className={styles.required}>*</span>
-                </label>
-                <input
-                  id="ssn"
-                  className={`${styles.input} ${fieldErrors.ssn ? styles.inputInvalid : ""}`}
-                  placeholder="123-45-6789"
-                  value={form.ssn}
-                  onChange={(e) => updateField("ssn", e.target.value)}
-                />
-                <span className={styles.hint}>Format: XXX-XX-XXXX</span>
-                {fieldErrors.ssn && <span className={styles.fieldError}>{fieldErrors.ssn}</span>}
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="dateOfBirth">
-                  Date of Birth <span className={styles.required}>*</span>
-                </label>
-                <input
-                  id="dateOfBirth"
-                  type="date"
-                  className={`${styles.input} ${fieldErrors.dateOfBirth ? styles.inputInvalid : ""}`}
-                  value={form.dateOfBirth}
-                  onChange={(e) => updateField("dateOfBirth", e.target.value)}
-                />
-                {fieldErrors.dateOfBirth && <span className={styles.fieldError}>{fieldErrors.dateOfBirth}</span>}
-              </div>
-            </div>
-
-            {/* Not in the mockup — the mockup predates schema.prisma's required `description`
-                column ("Reason for enrollment, medical history, etc."). Per the README, the
-                schema wins when it and the mockup disagree. */}
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="description">
-                Reason for Enrollment <span className={styles.required}>*</span>
-              </label>
-              <textarea
-                id="description"
-                className={`${styles.textarea} ${fieldErrors.description ? styles.inputInvalid : ""}`}
-                placeholder="Describe why you're applying — relevant medical history, referring physician, etc."
-                value={form.description}
-                onChange={(e) => updateField("description", e.target.value)}
-              />
-              {fieldErrors.description && <span className={styles.fieldError}>{fieldErrors.description}</span>}
-            </div>
-
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="notes">
-                Additional Notes
-              </label>
-              <textarea
-                id="notes"
-                className={styles.textarea}
-                placeholder="Any additional information you'd like to provide..."
-                value={form.notes}
-                onChange={(e) => updateField("notes", e.target.value)}
-              />
-            </div>
-
-            <hr className={styles.divider} />
-
-            <div className={styles.consentBox}>
-              By submitting this form, you consent to the collection and processing of your personal
-              information in accordance with our privacy policy. Your data will be reviewed by authorized
-              personnel only.
-            </div>
-
-            {confirmingClear ? (
-              <div className={styles.confirmBar} role="alertdialog" aria-label="Confirm clearing the form">
-                <p className={styles.confirmText}>Clear everything you&apos;ve entered? This can&apos;t be undone.</p>
-                <div className={styles.actions}>
-                  <button type="button" className={styles.cancelButton} onClick={() => setConfirmingClear(false)}>
-                    Keep Editing
-                  </button>
-                  <button type="button" className={styles.dangerButton} onClick={confirmClear}>
-                    Yes, Clear Intake
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className={styles.actions}>
-                <button
-                  type="button"
-                  className={styles.cancelButton}
-                  disabled={isSubmitting}
-                  onClick={handleClearClick}
-                >
-                  Clear Intake
-                </button>
-                <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
-                  {isSubmitting ? "Submitting..." : "Submit Intake"}
-                </button>
-              </div>
-            )}
-          </form>
-        </div>
-      ) : (
-        lastCreated && (
-          <div className={styles.successCard}>
-            <div className={styles.successIconWrap}>
-              <CheckIcon />
-            </div>
-            <h1 className={styles.successTitle}>Intake Submitted Successfully</h1>
-            <p className={styles.successText}>
-              Your intake has been received and is now pending review. You will be notified once a
-              reviewer processes your submission.
+    <>
+      <AppHeader user={{ name: user.name, role: "PATIENT" }} navItems={PATIENT_NAV} />
+      <main className={styles.page}>
+        {view === "form" ? (
+          <div className={styles.card}>
+            <h1 className={styles.cardTitle}>Submit New Intake</h1>
+            <p className={styles.cardSubtitle}>
+              Please provide your personal information below. All fields marked with * are required. Your
+              information is encrypted and securely stored.
             </p>
-            <div className={styles.refBox}>
-              <div className={styles.refLabel}>Reference Number</div>
-              <div className={styles.refValue}>{shortRef(lastCreated.id)}</div>
-            </div>
-            <div className={styles.successActions}>
-              <button
-                className={styles.cancelButton}
-                onClick={() => {
-                  resetForm();
-                  setView("form");
-                }}
-              >
-                Submit Another
-              </button>
-              <button
-                className={styles.submitButton}
-                onClick={() => {
-                  resetForm();
-                  setView("form");
-                }}
-              >
-                Back to My Applications
-              </button>
-            </div>
-          </div>
-        )
-      )}
 
-      <div className={styles.listCard}>
-        <h2 className={styles.listHeader}>Your Applications</h2>
-        {intakes.length === 0 ? (
-          <p className={styles.listEmpty}>You haven&apos;t submitted any applications yet.</p>
-        ) : (
-          intakes.map((intake) => (
-            <div key={intake.id} className={styles.listRow}>
-              <div className={styles.listRowMain}>
-                <div className={styles.listRowTitle}>{shortRef(intake.id)}</div>
-                <div className={styles.listRowMeta}>
-                  Submitted {new Date(intake.createdAt).toLocaleDateString()}
+            {topLevelError && <p className={styles.topLevelError}>{topLevelError}</p>}
+
+            <form onSubmit={handleSubmit} noValidate>
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="clientName">
+                  Full Name <span className={styles.required}>*</span>
+                </label>
+                <input
+                  id="clientName"
+                  className={`${styles.input} ${fieldErrors.clientName ? styles.inputInvalid : ""}`}
+                  placeholder="John Smith"
+                  value={form.clientName}
+                  onChange={(e) => updateField("clientName", e.target.value)}
+                />
+                {fieldErrors.clientName && <span className={styles.fieldError}>{fieldErrors.clientName}</span>}
+              </div>
+
+              <div className={styles.formGrid}>
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor="clientEmail">
+                    Email Address <span className={styles.required}>*</span>
+                  </label>
+                  <input
+                    id="clientEmail"
+                    type="email"
+                    className={`${styles.input} ${fieldErrors.clientEmail ? styles.inputInvalid : ""}`}
+                    placeholder="john@example.com"
+                    value={form.clientEmail}
+                    onChange={(e) => updateField("clientEmail", e.target.value)}
+                  />
+                  {fieldErrors.clientEmail && <span className={styles.fieldError}>{fieldErrors.clientEmail}</span>}
+                </div>
+
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor="clientPhone">
+                    Phone Number <span className={styles.required}>*</span>
+                  </label>
+                  <input
+                    id="clientPhone"
+                    type="tel"
+                    className={`${styles.input} ${fieldErrors.clientPhone ? styles.inputInvalid : ""}`}
+                    placeholder="(555) 123-4567"
+                    value={form.clientPhone}
+                    onChange={(e) => updateField("clientPhone", e.target.value)}
+                  />
+                  {fieldErrors.clientPhone && <span className={styles.fieldError}>{fieldErrors.clientPhone}</span>}
                 </div>
               </div>
-              <StatusBadge status={intake.status} />
+
+              <div className={styles.formGrid}>
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor="ssn">
+                    Social Security Number <span className={styles.required}>*</span>
+                  </label>
+                  <input
+                    id="ssn"
+                    className={`${styles.input} ${fieldErrors.ssn ? styles.inputInvalid : ""}`}
+                    placeholder="123-45-6789"
+                    value={form.ssn}
+                    onChange={(e) => updateField("ssn", e.target.value)}
+                  />
+                  <span className={styles.hint}>Format: XXX-XX-XXXX</span>
+                  {fieldErrors.ssn && <span className={styles.fieldError}>{fieldErrors.ssn}</span>}
+                </div>
+
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor="dateOfBirth">
+                    Date of Birth <span className={styles.required}>*</span>
+                  </label>
+                  <input
+                    id="dateOfBirth"
+                    type="date"
+                    className={`${styles.input} ${fieldErrors.dateOfBirth ? styles.inputInvalid : ""}`}
+                    value={form.dateOfBirth}
+                    onChange={(e) => updateField("dateOfBirth", e.target.value)}
+                  />
+                  {fieldErrors.dateOfBirth && <span className={styles.fieldError}>{fieldErrors.dateOfBirth}</span>}
+                </div>
+              </div>
+
+              {/* Not in the mockup — the mockup predates schema.prisma's required `description`
+                  column ("Reason for enrollment, medical history, etc."). Per the README, the
+                  schema wins when it and the mockup disagree. */}
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="description">
+                  Reason for Enrollment <span className={styles.required}>*</span>
+                </label>
+                <textarea
+                  id="description"
+                  className={`${styles.textarea} ${fieldErrors.description ? styles.inputInvalid : ""}`}
+                  placeholder="Describe why you're applying — relevant medical history, referring physician, etc."
+                  value={form.description}
+                  onChange={(e) => updateField("description", e.target.value)}
+                />
+                {fieldErrors.description && <span className={styles.fieldError}>{fieldErrors.description}</span>}
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="notes">
+                  Additional Notes
+                </label>
+                <textarea
+                  id="notes"
+                  className={styles.textarea}
+                  placeholder="Any additional information you'd like to provide..."
+                  value={form.notes}
+                  onChange={(e) => updateField("notes", e.target.value)}
+                />
+              </div>
+
+              <hr className={styles.divider} />
+
+              <div className={styles.consentBox}>
+                By submitting this form, you consent to the collection and processing of your personal
+                information in accordance with our privacy policy. Your data will be reviewed by authorized
+                personnel only.
+              </div>
+
+              {confirmingClear ? (
+                <div className={styles.confirmBar} role="alertdialog" aria-label="Confirm clearing the form">
+                  <p className={styles.confirmText}>Clear everything you&apos;ve entered? This can&apos;t be undone.</p>
+                  <div className={styles.actions}>
+                    <button type="button" className={styles.cancelButton} onClick={() => setConfirmingClear(false)}>
+                      Keep Editing
+                    </button>
+                    <button type="button" className={styles.dangerButton} onClick={confirmClear}>
+                      Yes, Clear Intake
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className={styles.actions}>
+                  <button
+                    type="button"
+                    className={styles.cancelButton}
+                    disabled={isSubmitting}
+                    onClick={handleClearClick}
+                  >
+                    Clear Intake
+                  </button>
+                  <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
+                    {isSubmitting ? "Submitting..." : "Submit Intake"}
+                  </button>
+                </div>
+              )}
+            </form>
+          </div>
+        ) : (
+          lastCreated && (
+            <div className={styles.successCard}>
+              <div className={styles.successIconWrap}>
+                <CheckIcon />
+              </div>
+              <h1 className={styles.successTitle}>Intake Submitted Successfully</h1>
+              <p className={styles.successText}>
+                Your intake has been received and is now pending review. You will be notified once a
+                reviewer processes your submission.
+              </p>
+              <div className={styles.refBox}>
+                <div className={styles.refLabel}>Reference Number</div>
+                <div className={styles.refValue}>{shortRef(lastCreated.id)}</div>
+              </div>
+              <div className={styles.successActions}>
+                <button
+                  className={styles.cancelButton}
+                  onClick={() => {
+                    resetForm();
+                    setView("form");
+                  }}
+                >
+                  Submit Another
+                </button>
+                <button
+                  className={styles.submitButton}
+                  onClick={() => {
+                    resetForm();
+                    setView("form");
+                  }}
+                >
+                  Back to My Applications
+                </button>
+              </div>
             </div>
-          ))
+          )
         )}
-      </div>
-    </main>
+
+        <div className={styles.listCard}>
+          <h2 className={styles.listHeader}>Your Applications</h2>
+          {intakes.length === 0 ? (
+            <p className={styles.listEmpty}>You haven&apos;t submitted any applications yet.</p>
+          ) : (
+            intakes.map((intake) => (
+              <div key={intake.id} className={styles.listRow}>
+                <div className={styles.listRowMain}>
+                  <div className={styles.listRowTitle}>{shortRef(intake.id)}</div>
+                  <div className={styles.listRowMeta}>
+                    Submitted {new Date(intake.createdAt).toLocaleDateString()}
+                  </div>
+                </div>
+                <StatusBadge status={intake.status} />
+              </div>
+            ))
+          )}
+        </div>
+      </main>
+    </>
   );
 }

@@ -11,7 +11,7 @@
 import { useMemo, useState, FormEvent } from "react";
 import Link from "next/link";
 import styles from "./documents.module.css";
-import AppHeader from "@/components/AppHeader";
+import AppHeader, { PATIENT_NAV } from "@/components/AppHeader";
 import { shortRef, formatFileSize } from "@/lib/format";
 import { IntakeStatus, STATUS_LABEL } from "@/lib/intake-status";
 
@@ -282,203 +282,204 @@ export default function DocumentsView({
   }
 
   return (
-    <main className={styles.page}>
-      <AppHeader user={user} />
+    <>
+      <AppHeader user={{ name: user.name, role: "PATIENT" }} navItems={PATIENT_NAV} />
+      <main className={styles.page}>
+        {intakes.length === 0 ? (
+          <div className={styles.emptyStateCard}>
+            <h1 className={styles.cardTitle}>Supporting Documents</h1>
+            <p className={styles.emptyStateText}>
+              You&apos;ll need an enrollment application before you can upload supporting documents — every
+              document is attached to one. Submit your first application, then come back here.
+            </p>
+            <Link href="/intake" className={styles.submitButton}>
+              Submit an Application
+            </Link>
+          </div>
+        ) : (
+          <div className={styles.card}>
+            <h1 className={styles.cardTitle}>Supporting Documents</h1>
+            <p className={styles.cardSubtitle}>
+              Upload medical records, insurance cards, prescriptions, or ID photos. Once a file is here, you
+              can reuse it on any of your other applications without uploading it again.
+            </p>
 
-      {intakes.length === 0 ? (
-        <div className={styles.emptyStateCard}>
-          <h1 className={styles.cardTitle}>Supporting Documents</h1>
-          <p className={styles.emptyStateText}>
-            You&apos;ll need an enrollment application before you can upload supporting documents — every
-            document is attached to one. Submit your first application, then come back here.
-          </p>
-          <Link href="/intake" className={styles.submitButton}>
-            Submit an Application
-          </Link>
-        </div>
-      ) : (
-        <div className={styles.card}>
-          <h1 className={styles.cardTitle}>Supporting Documents</h1>
-          <p className={styles.cardSubtitle}>
-            Upload medical records, insurance cards, prescriptions, or ID photos. Once a file is here, you
-            can reuse it on any of your other applications without uploading it again.
-          </p>
+            {topLevelError && <p className={styles.topLevelError}>{topLevelError}</p>}
+            {topLevelNotice && <p className={styles.topLevelNotice}>{topLevelNotice}</p>}
 
-          {topLevelError && <p className={styles.topLevelError}>{topLevelError}</p>}
-          {topLevelNotice && <p className={styles.topLevelNotice}>{topLevelNotice}</p>}
-
-          <form onSubmit={handleUpload}>
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="document-file-input">
-                File <span className={styles.required}>*</span>
-              </label>
-              <div className={`${styles.fileRow} ${selectedFile ? styles.fileRowChosen : ""}`}>
-                <FileTypeIcon fileType={selectedFile?.type ?? "application/pdf"} />
-                <span>{selectedFile ? selectedFile.name : "No file chosen"}</span>
+            <form onSubmit={handleUpload}>
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="document-file-input">
+                  File <span className={styles.required}>*</span>
+                </label>
+                <div className={`${styles.fileRow} ${selectedFile ? styles.fileRowChosen : ""}`}>
+                  <FileTypeIcon fileType={selectedFile?.type ?? "application/pdf"} />
+                  <span>{selectedFile ? selectedFile.name : "No file chosen"}</span>
+                </div>
+                <input
+                  id="document-file-input"
+                  type="file"
+                  accept="application/pdf,image/*"
+                  onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
+                />
+                <span className={styles.hint}>PDF or photo (JPG, PNG, WEBP, HEIC) — up to 10MB.</span>
+                {fieldErrors.file && <span className={styles.fieldError}>{fieldErrors.file}</span>}
               </div>
-              <input
-                id="document-file-input"
-                type="file"
-                accept="application/pdf,image/*"
-                onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
-              />
-              <span className={styles.hint}>PDF or photo (JPG, PNG, WEBP, HEIC) — up to 10MB.</span>
-              {fieldErrors.file && <span className={styles.fieldError}>{fieldErrors.file}</span>}
-            </div>
 
-            <div className={styles.field}>
-              <label className={styles.label}>
-                Attach to <span className={styles.required}>*</span>
-              </label>
-              <div className={styles.attachPicker}>
-                <IntakeCheckboxList
-                  intakes={intakes}
-                  selected={attachToIntakeIds}
-                  onToggle={(id) => toggleInSet(setAttachToIntakeIds, id)}
-                  onToggleAll={() => toggleAllInSet(setAttachToIntakeIds, intakes.map((i) => i.id))}
+              <div className={styles.field}>
+                <label className={styles.label}>
+                  Attach to <span className={styles.required}>*</span>
+                </label>
+                <div className={styles.attachPicker}>
+                  <IntakeCheckboxList
+                    intakes={intakes}
+                    selected={attachToIntakeIds}
+                    onToggle={(id) => toggleInSet(setAttachToIntakeIds, id)}
+                    onToggleAll={() => toggleAllInSet(setAttachToIntakeIds, intakes.map((i) => i.id))}
+                  />
+                </div>
+                {fieldErrors.intakeIds && <span className={styles.fieldError}>{fieldErrors.intakeIds}</span>}
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="document-description">
+                  Description
+                </label>
+                <textarea
+                  id="document-description"
+                  className={styles.textarea}
+                  placeholder="e.g. Insurance card, front and back"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
                 />
               </div>
-              {fieldErrors.intakeIds && <span className={styles.fieldError}>{fieldErrors.intakeIds}</span>}
-            </div>
 
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="document-description">
-                Description
-              </label>
-              <textarea
-                id="document-description"
-                className={styles.textarea}
-                placeholder="e.g. Insurance card, front and back"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
-
-            <div className={styles.actions}>
-              <button type="submit" className={styles.submitButton} disabled={isUploading}>
-                {isUploading ? "Uploading..." : "Upload Document"}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      <div className={styles.libraryCard}>
-        <h2 className={styles.libraryHeader}>Your Documents</h2>
-        {libraryGroups.length === 0 ? (
-          <p className={styles.libraryEmpty}>You haven&apos;t uploaded any documents yet.</p>
-        ) : (
-          libraryGroups.map((group) => {
-            const attachedIntakeIds = new Set(group.attachments.map((a) => a.intakeId));
-            const availableIntakes = intakes.filter((i) => !attachedIntakeIds.has(i.id));
-            const isBusy = busyGroup === group.filePath;
-
-            return (
-              <div key={group.filePath} className={styles.libraryRow}>
-                <div className={styles.libraryIcon}>
-                  <FileTypeIcon fileType={group.fileType} />
-                </div>
-                <div className={styles.libraryMain}>
-                  <div className={styles.libraryFileName}>{group.fileName}</div>
-                  <div className={styles.libraryMeta}>
-                    {formatFileSize(group.fileSize)} · uploaded {new Date(group.earliestCreatedAt).toLocaleDateString()}
-                  </div>
-                  {group.description && <div className={styles.libraryDescription}>{group.description}</div>}
-
-                  <div className={styles.attachedRow}>
-                    {group.attachments.map((attachment) => {
-                      const intake = intakeById.get(attachment.intakeId);
-                      if (!intake) return null;
-                      return (
-                        <span
-                          key={attachment.documentId}
-                          className={`${styles.attachChip} ${BADGE_CLASS[intake.status]}`}
-                        >
-                          {shortRef(intake.id)}
-                          <button
-                            type="button"
-                            className={styles.attachChipRemove}
-                            disabled={isBusy}
-                            aria-label={`Remove from ${shortRef(intake.id)}`}
-                            title={`Remove from ${shortRef(intake.id)}`}
-                            onClick={() => {
-                              if (window.confirm(`Remove this document from application ${shortRef(intake.id)}?`)) {
-                                handleRemoveAttachment(attachment.documentId, group.filePath);
-                              }
-                            }}
-                          >
-                            ×
-                          </button>
-                        </span>
-                      );
-                    })}
-                  </div>
-
-                  {availableIntakes.length > 0 && (
-                    <div className={styles.libraryActions}>
-                      <a
-                        href={`/api/documents/${group.attachments[0].documentId}/file`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={styles.linkButton}
-                      >
-                        View
-                      </a>
-                      <button
-                        type="button"
-                        className={styles.linkButton}
-                        onClick={() => {
-                          setAttachPickerFor((current) => (current === group.filePath ? null : group.filePath));
-                          setAttachPickerTargets(new Set());
-                        }}
-                      >
-                        Reuse for other applications
-                      </button>
-                    </div>
-                  )}
-                  {availableIntakes.length === 0 && (
-                    <div className={styles.libraryActions}>
-                      <a
-                        href={`/api/documents/${group.attachments[0].documentId}/file`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={styles.linkButton}
-                      >
-                        View
-                      </a>
-                    </div>
-                  )}
-
-                  {attachPickerFor === group.filePath && (
-                    <div className={styles.attachPicker}>
-                      <IntakeCheckboxList
-                        intakes={availableIntakes}
-                        selected={attachPickerTargets}
-                        onToggle={(id) => toggleInSet(setAttachPickerTargets, id)}
-                        onToggleAll={() => toggleAllInSet(setAttachPickerTargets, availableIntakes.map((i) => i.id))}
-                      />
-                      <button
-                        type="button"
-                        className={styles.cancelButton}
-                        disabled={isBusy || attachPickerTargets.size === 0}
-                        onClick={() => handleAttachExisting(group)}
-                      >
-                        {isBusy
-                          ? "Attaching..."
-                          : attachPickerTargets.size === 0
-                            ? "Attach"
-                            : `Attach to ${attachPickerTargets.size} application${
-                                attachPickerTargets.size === 1 ? "" : "s"
-                              }`}
-                      </button>
-                    </div>
-                  )}
-                </div>
+              <div className={styles.actions}>
+                <button type="submit" className={styles.submitButton} disabled={isUploading}>
+                  {isUploading ? "Uploading..." : "Upload Document"}
+                </button>
               </div>
-            );
-          })
+            </form>
+          </div>
         )}
-      </div>
-    </main>
+
+        <div className={styles.libraryCard}>
+          <h2 className={styles.libraryHeader}>Your Documents</h2>
+          {libraryGroups.length === 0 ? (
+            <p className={styles.libraryEmpty}>You haven&apos;t uploaded any documents yet.</p>
+          ) : (
+            libraryGroups.map((group) => {
+              const attachedIntakeIds = new Set(group.attachments.map((a) => a.intakeId));
+              const availableIntakes = intakes.filter((i) => !attachedIntakeIds.has(i.id));
+              const isBusy = busyGroup === group.filePath;
+
+              return (
+                <div key={group.filePath} className={styles.libraryRow}>
+                  <div className={styles.libraryIcon}>
+                    <FileTypeIcon fileType={group.fileType} />
+                  </div>
+                  <div className={styles.libraryMain}>
+                    <div className={styles.libraryFileName}>{group.fileName}</div>
+                    <div className={styles.libraryMeta}>
+                      {formatFileSize(group.fileSize)} · uploaded {new Date(group.earliestCreatedAt).toLocaleDateString()}
+                    </div>
+                    {group.description && <div className={styles.libraryDescription}>{group.description}</div>}
+
+                    <div className={styles.attachedRow}>
+                      {group.attachments.map((attachment) => {
+                        const intake = intakeById.get(attachment.intakeId);
+                        if (!intake) return null;
+                        return (
+                          <span
+                            key={attachment.documentId}
+                            className={`${styles.attachChip} ${BADGE_CLASS[intake.status]}`}
+                          >
+                            {shortRef(intake.id)}
+                            <button
+                              type="button"
+                              className={styles.attachChipRemove}
+                              disabled={isBusy}
+                              aria-label={`Remove from ${shortRef(intake.id)}`}
+                              title={`Remove from ${shortRef(intake.id)}`}
+                              onClick={() => {
+                                if (window.confirm(`Remove this document from application ${shortRef(intake.id)}?`)) {
+                                  handleRemoveAttachment(attachment.documentId, group.filePath);
+                                }
+                              }}
+                            >
+                              ×
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+
+                    {availableIntakes.length > 0 && (
+                      <div className={styles.libraryActions}>
+                        <a
+                          href={`/api/documents/${group.attachments[0].documentId}/file`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.linkButton}
+                        >
+                          View
+                        </a>
+                        <button
+                          type="button"
+                          className={styles.linkButton}
+                          onClick={() => {
+                            setAttachPickerFor((current) => (current === group.filePath ? null : group.filePath));
+                            setAttachPickerTargets(new Set());
+                          }}
+                        >
+                          Reuse for other applications
+                        </button>
+                      </div>
+                    )}
+                    {availableIntakes.length === 0 && (
+                      <div className={styles.libraryActions}>
+                        <a
+                          href={`/api/documents/${group.attachments[0].documentId}/file`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.linkButton}
+                        >
+                          View
+                        </a>
+                      </div>
+                    )}
+
+                    {attachPickerFor === group.filePath && (
+                      <div className={styles.attachPicker}>
+                        <IntakeCheckboxList
+                          intakes={availableIntakes}
+                          selected={attachPickerTargets}
+                          onToggle={(id) => toggleInSet(setAttachPickerTargets, id)}
+                          onToggleAll={() => toggleAllInSet(setAttachPickerTargets, availableIntakes.map((i) => i.id))}
+                        />
+                        <button
+                          type="button"
+                          className={styles.cancelButton}
+                          disabled={isBusy || attachPickerTargets.size === 0}
+                          onClick={() => handleAttachExisting(group)}
+                        >
+                          {isBusy
+                            ? "Attaching..."
+                            : attachPickerTargets.size === 0
+                              ? "Attach"
+                              : `Attach to ${attachPickerTargets.size} application${
+                                  attachPickerTargets.size === 1 ? "" : "s"
+                                }`}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </main>
+    </>
   );
 }

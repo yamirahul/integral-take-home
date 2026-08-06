@@ -127,6 +127,29 @@ instead:
 - Accepted: PDF and photos (JPEG/PNG/WEBP/HEIC), up to 10MB, validated server-side
   regardless of what the browser's file picker allowed through.
 
+### Review Queue & data minimization (Goal 4)
+
+`/queue` is a Reviewer's landing page (`src/proxy.ts` sends them straight there on
+sign-in) — a table of every application, with stat-card counts by status, search
+(name/ID/email), a status filter, and self-assignment.
+
+- `src/lib/intakes.ts`'s `SAFE_INTAKE_SELECT` is the important part: the query behind
+  both the queue table and a patient's own "Your Applications" list **never selects**
+  `ssn`, `clientPhone`, `dateOfBirth`, `description`, or `notes` — not because they're
+  masked, but because neither list has ever needed to display them. The
+  privileged/redacted toggle the README's Privacy Model describes (Goal 5) applies to
+  the single-intake *detail* fetch, which is the only place those fields get requested
+  at all — so there was nothing to redact in the list endpoint in the first place.
+- `PATCH /api/intakes/[id]` currently handles Reviewer self-assignment only
+  (`{ reviewerId: <self> }` to claim, `{ reviewerId: null }` to release) — a Reviewer
+  can't assign an application to someone else, or release someone else's claim. Writes
+  an `ASSIGNED` audit entry. Structured so Goal 6 can extend the same handler with a
+  `status` field for the PENDING → IN_REVIEW → APPROVED/REJECTED transitions.
+- `/queue/[id]` exists only as a placeholder so the table's "View" action isn't a dead
+  link — it shows the same safe fields as the table, with a note that the full record
+  (privileged/redacted PII, status changes, audit trail) is Goal 5/6/7. Expect that file
+  to be replaced when Goal 5 lands.
+
 ## Demo Users
 
 The database is seeded with two demo users. Both use the password `password123`
@@ -156,7 +179,11 @@ src/
 │   │   ├── DocumentsView.tsx # Upload form + per-patient document library (Goal 3)
 │   │   └── documents.module.css
 │   ├── queue/
-│   │   └── page.tsx          # Reviewer queue page (stub)
+│   │   ├── page.tsx          # Server Component: auth + initial data for /queue
+│   │   ├── QueueView.tsx     # Stat cards, search/filter, table, self-assign (Goal 4)
+│   │   ├── queue.module.css
+│   │   └── [id]/
+│   │       └── page.tsx      # Placeholder detail view — real one is Goal 5
 │   └── api/
 │       ├── auth/
 │       │   ├── login/route.ts    # POST — verify credentials, set session cookie
@@ -165,7 +192,7 @@ src/
 │       ├── intakes/
 │       │   ├── route.ts          # GET (role-scoped list) / POST (create) intakes
 │       │   └── [id]/
-│       │       └── route.ts      # GET/PATCH single intake (stub — Goals 5/6)
+│       │       └── route.ts      # GET single intake (stub — Goal 5) / PATCH self-assign (Goal 4, extends for Goal 6)
 │       ├── documents/
 │       │   ├── route.ts          # GET (library) / POST (upload) documents
 │       │   ├── attach/route.ts   # POST — reuse an existing document on another intake
@@ -175,7 +202,8 @@ src/
 │       └── users/
 │           └── route.ts          # GET users (reference example)
 ├── components/
-│   ├── AppHeader.tsx         # Shared patient-page header + nav (New Intake / Documents)
+│   ├── AppHeader.tsx         # Shared top bar (brand, role-specific nav, user, logout) — every page
+│   ├── AppHeader.module.css
 │   ├── LogoutButton.tsx
 │   ├── AuditLog.tsx          # Audit trail display (stub — Goal 7)
 │   └── IntakeDetail.tsx      # Privileged/redacted detail view (stub — Goal 5)
@@ -184,9 +212,9 @@ src/
 │   ├── auth.ts               # Password hashing (scrypt)
 │   ├── session.ts            # Signed session cookie (Web Crypto — Edge + Node safe)
 │   ├── current-user.ts       # getCurrentUser() for Server Components/route handlers
-│   ├── intakes.ts            # Shared role-scoped intake query
+│   ├── intakes.ts            # Shared safe-field intake queries (list + single) — see Goal 4 above
 │   ├── documents.ts          # Content-addressed file storage (server-only, Node fs/crypto)
-│   ├── format.ts             # Client-safe display formatting (shortRef, formatFileSize)
+│   ├── format.ts             # Client-safe display formatting (shortRef, formatFileSize, formatDateTime)
 │   └── intake-status.ts      # Shared IntakeStatus type + labels
 ├── styles/
 │   └── shell.module.css      # Shared card/field/button/badge primitives, composed by pages
@@ -199,8 +227,9 @@ dev.db                        # SQLite database (repo root)
 ```
 
 `GET /api/users` was implemented as the starting reference for the Prisma + route handler
-pattern. Auth (Goal 1), the enrollment form (Goal 2), and document uploads (Goal 3) are now
-built; queue/detail-view/status-updates/audit-trail (Goals 4-7) are still stubs.
+pattern. Auth (Goal 1), the enrollment form (Goal 2), document uploads (Goal 3), and the
+review queue (Goal 4) are now built; detail-view/status-updates/audit-trail (Goals 5-7)
+are still stubs.
 
 ## Goals
 

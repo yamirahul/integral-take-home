@@ -21,15 +21,7 @@ export default async function IntakePage() {
       initialIntakes={intakes.map((intake) => ({
         id: intake.id,
         status: intake.status,
-        clientName: intake.clientName,
-        clientEmail: intake.clientEmail,
-        clientPhone: intake.clientPhone,
-        dateOfBirth: intake.dateOfBirth,
-        ssn: intake.ssn,
-        description: intake.description,
-        notes: intake.notes,
         createdAt: intake.createdAt.toISOString(),
-        updatedAt: intake.updatedAt.toISOString(),
       }))}
     />
   );

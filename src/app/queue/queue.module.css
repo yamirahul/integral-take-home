@@ -1,0 +1,260 @@
+/* Layout follows /public/design-inspiration/reviewer-dashboard.png: stat cards, a
+   search + status filter toolbar, and a table (ID / Client Name / Email / Submitted /
+   Status / Reviewer / Actions). Wider than the patient pages' 640px cards — a table
+   needs the room — so this defines its own container width rather than composing
+   shell.module.css's .card, while still reusing its badges/buttons. */
+
+.page {
+  composes: page from "../../styles/shell.module.css";
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.pageHeader {
+  margin-bottom: 1.5rem;
+}
+
+.pageTitle {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.pageSubtitle {
+  color: #6b7280;
+  margin: 0.35rem 0 0;
+  font-size: 0.92rem;
+}
+
+/* Stat cards */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.statCard {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 1.1rem 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.statIcon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.statIconPENDING {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.statIconIN_REVIEW {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.statIconAPPROVED {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.statIconREJECTED {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.statLabel {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.statCount {
+  font-size: 1.4rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Table card */
+.tableCard {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.tableHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.tableTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.tableSubtitle {
+  color: #9ca3af;
+  font-size: 0.82rem;
+  margin: 0.2rem 0 0;
+}
+
+.toolbar {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.searchWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 0.7rem;
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.searchInput {
+  composes: input from "../../styles/shell.module.css";
+  padding-left: 2.1rem;
+  width: 260px;
+  font-size: 0.85rem;
+}
+
+.filterSelect {
+  composes: select from "../../styles/shell.module.css";
+  font-size: 0.85rem;
+  padding: 0.65rem 0.75rem;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  text-align: left;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #9ca3af;
+  font-weight: 600;
+  padding: 0 0.75rem 0.7rem;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 0.85rem 0.75rem;
+  border-top: 1px solid #f3f4f6;
+  vertical-align: middle;
+  font-size: 0.88rem;
+}
+
+.idCell {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.nameCell {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.emailCell {
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.submittedCell {
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.badge {
+  composes: badge from "../../styles/shell.module.css";
+}
+
+.badgePENDING {
+  composes: badgePENDING from "../../styles/shell.module.css";
+}
+
+.badgeIN_REVIEW {
+  composes: badgeIN_REVIEW from "../../styles/shell.module.css";
+}
+
+.badgeAPPROVED {
+  composes: badgeAPPROVED from "../../styles/shell.module.css";
+}
+
+.badgeREJECTED {
+  composes: badgeREJECTED from "../../styles/shell.module.css";
+}
+
+.reviewerCell {
+  white-space: nowrap;
+}
+
+.reviewerMuted {
+  color: #9ca3af;
+}
+
+.reviewerYou {
+  font-weight: 600;
+}
+
+.linkButton {
+  composes: linkButton from "../../styles/shell.module.css";
+}
+
+.actionsCell {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.viewLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #111827;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.emptyState {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.88rem;
+  padding: 2.5rem 0;
+}
+
+.topLevelError {
+  composes: topLevelError from "../../styles/shell.module.css";
+}

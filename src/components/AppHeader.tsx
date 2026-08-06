@@ -1,30 +1,67 @@
 "use client";
 
-// Shared header for the patient-facing pages (/intake, /documents): brand, current user,
-// a tab nav between the two, and Log Out. Factored out once a second patient page needed
-// the exact same block IntakeView.tsx already had, rather than duplicating it again.
+// Shared top bar for every signed-in page (/intake, /documents, /queue): brand, a pill
+// tab nav (which links show depends on the caller's role — see PATIENT_NAV/REVIEWER_NAV
+// below), the current user's name + role, and an icon Log Out button. Chrome follows
+// /public/design-inspiration/reviewer-dashboard.png (full-width bar, pill nav, stacked
+// name/role, icon-only logout) — adopted for the patient pages too rather than keeping
+// two different header styles in the same app. One label deviates from the mockup: it
+// says "Intake Review", this says "Intake Review System" to match the title already
+// established on the sign-in page.
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import LogoutButton from "./LogoutButton";
 import styles from "./AppHeader.module.css";
 
-const PATIENT_NAV = [
+interface NavItem {
+  href: string;
+  label: string;
+}
+
+export const PATIENT_NAV: NavItem[] = [
   { href: "/intake", label: "New Intake" },
   { href: "/documents", label: "Documents" },
 ];
 
-export default function AppHeader({ user }: { user: { name: string; email: string } }) {
+// Just one tab today — Audit Trail is Goal 7. Add it here (and nowhere else) once that
+// page exists.
+export const REVIEWER_NAV: NavItem[] = [{ href: "/queue", label: "Review Queue" }];
+
+const ROLE_LABEL: Record<"PATIENT" | "REVIEWER", string> = {
+  PATIENT: "Patient",
+  REVIEWER: "Reviewer",
+};
+
+function BrandIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+export default function AppHeader({
+  user,
+  navItems,
+}: {
+  user: { name: string; role: "PATIENT" | "REVIEWER" };
+  navItems: NavItem[];
+}) {
   const pathname = usePathname();
 
   return (
-    <div className={styles.topBar}>
-      <div>
-        <div className={styles.brand}>Intake Review System</div>
-        <div className={styles.userInfo}>
-          Signed in as {user.name} ({user.email})
+    <header className={styles.topBar}>
+      <div className={styles.inner}>
+        <div className={styles.brand}>
+          <span className={styles.brandIcon}>
+            <BrandIcon />
+          </span>
+          Intake Review System
         </div>
+
         <nav className={styles.nav}>
-          {PATIENT_NAV.map((item) => (
+          {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -34,8 +71,15 @@ export default function AppHeader({ user }: { user: { name: string; email: strin
             </Link>
           ))}
         </nav>
+
+        <div className={styles.right}>
+          <div className={styles.userInfo}>
+            <div className={styles.userName}>{user.name}</div>
+            <div className={styles.userRole}>{ROLE_LABEL[user.role]}</div>
+          </div>
+          <LogoutButton />
+        </div>
       </div>
-      <LogoutButton />
-    </div>
+    </header>
   );
 }

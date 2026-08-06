@@ -1,19 +1,31 @@
-// Server Component: reads the session via getCurrentUser() on the server, before render.
-// middleware.ts already guarantees only a signed-in REVIEWER reaches this far.
+// Server Component: reads the session via getCurrentUser() and loads every application
+// (via the shared src/lib/intakes.ts helper — same query GET /api/intakes uses) before
+// the page ever reaches the browser. proxy.ts already guarantees only a signed-in
+// REVIEWER reaches this far; the checks below are a defensive fallback, same reasoning
+// as /intake's and /documents' page.tsx.
+import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/current-user";
-import LogoutButton from "@/components/LogoutButton";
+import { listIntakesForUser } from "@/lib/intakes";
+import QueueView from "./QueueView";
 
 export default async function QueuePage() {
   const user = await getCurrentUser();
+  if (!user) redirect("/");
+  if (user.role !== "REVIEWER") redirect("/intake");
+
+  const intakes = await listIntakesForUser(user);
 
   return (
-    <main style={{ padding: "2rem" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h1>Review Queue</h1>
-        <LogoutButton />
-      </div>
-      <p>Signed in as {user?.name} ({user?.organization}).</p>
-      <p>Review and manage submitted intakes. (Coming next.)</p>
-    </main>
+    <QueueView
+      currentUser={{ id: user.id, name: user.name }}
+      initialIntakes={intakes.map((intake) => ({
+        id: intake.id,
+        status: intake.status,
+        clientName: intake.clientName,
+        clientEmail: intake.clientEmail,
+        createdAt: intake.createdAt.toISOString(),
+        reviewer: intake.reviewer,
+      }))}
+    />
   );
 }

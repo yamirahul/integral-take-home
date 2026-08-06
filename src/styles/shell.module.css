@@ -6,7 +6,9 @@
 .page {
   min-height: 100vh;
   background: #fafafa;
-  padding: 2.5rem 1.5rem 4rem;
+  /* Less top padding than the other sides — AppHeader (a separate, full-width bar) is
+     already the visual top edge; this just needs breathing room under it. */
+  padding: 1.75rem 1.5rem 4rem;
 }
 
 .card {
@@ -124,6 +126,22 @@
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
+}
+
+.linkButton {
+  border: none;
+  background: none;
+  padding: 0;
+  color: #111827;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.linkButton:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .submitButton {
