@@ -1,64 +1,146 @@
-.main {
+/* Visual layout follows /public/design-inspiration/login-page.png (role toggle,
+   centered card). Copy/labels deviate from the mockup per the README's note that it's
+   not authoritative — "Client" there is "Patient" here. */
+
+.page {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 6rem;
-  min-height: 100vh;
-}
-
-.container {
-  max-width: 600px;
-  width: 100%;
+  padding: 3rem 1.5rem;
+  background: #fafafa;
 }
 
 .header {
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
 }
 
 .title {
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 700;
   margin: 0;
 }
 
-.nav {
+.subtitle {
+  color: #6b7280;
+  margin: 0.5rem 0 0;
+}
+
+.card {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.cardTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.cardSubtitle {
+  color: #6b7280;
+  margin: 0.375rem 0 0;
+}
+
+/* Segmented role toggle */
+.roleToggle {
+  display: flex;
+  gap: 0.25rem;
+  background: #f3f4f6;
+  border-radius: 10px;
+  padding: 0.25rem;
+  margin: 1.5rem 0 1.25rem;
+}
+
+.roleButton {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0.5rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #4b5563;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.roleButtonActive {
+  background: #fff;
+  color: #111827;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.field {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  align-items: center;
+  gap: 0.375rem;
+  margin-bottom: 1rem;
 }
 
-.link {
-  display: inline-block;
-  width: 100%;
-  max-width: 300px;
-  padding: 1rem 2rem;
-  text-align: center;
-  background-color: rgba(var(--card-rgb), 0.1);
-  border: 1px solid rgba(var(--card-border-rgb), 0.15);
+.label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.input {
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
-  text-decoration: none;
-  color: inherit;
-  font-size: 1.1rem;
-  font-weight: 500;
-  transition:
-    background 200ms,
-    border 200ms;
+  font-size: 0.95rem;
 }
 
-.link:hover {
-  background-color: rgba(var(--card-rgb), 0.2);
-  border-color: rgba(var(--card-border-rgb), 0.3);
+.input:focus {
+  outline: 2px solid #111827;
+  outline-offset: -1px;
 }
 
-@media (max-width: 768px) {
-  .main {
-    padding: 2rem 1rem;
-  }
+.error {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 0.875rem;
+}
 
-  .title {
-    font-size: 2rem;
-  }
+.submit {
+  width: 100%;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 8px;
+  background: #111827;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.submit:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.helperText {
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.85rem;
+  margin: 1rem 0 0;
+}
+
+.demoNote {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.8rem;
+  margin-top: 1.5rem;
 }

@@ -29,6 +29,8 @@ model User {
   name         String
   role         Role
   organization String
+  // Scrypt hash in "saltHex:hashHex" format — see src/lib/auth.ts. Never store plaintext.
+  password     String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

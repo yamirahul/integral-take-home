@@ -1,10 +1,16 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
+import { hashPassword } from "../src/lib/auth";
 
 const adapter = new PrismaLibSql({ url: process.env.DATABASE_URL! });
 
 const prisma = new PrismaClient({ adapter });
+
+// Shared demo password for both seeded accounts — this is a take-home fixture, not a
+// real credential, so it's fine to publish in the README. Hashed the same way a real
+// signup/login flow would hash it (see src/lib/auth.ts).
+const DEMO_PASSWORD = "password123";
 
 async function main() {
   console.log("Seeding database...");
@@ -15,6 +21,8 @@ async function main() {
   await prisma.intake.deleteMany();
   await prisma.user.deleteMany();
 
+  const demoPasswordHash = hashPassword(DEMO_PASSWORD);
+
   // Create demo users
   const patientUser = await prisma.user.create({
     data: {
@@ -22,6 +30,7 @@ async function main() {
       name: "Demo Patient",
       role: "PATIENT",
       organization: "Trial Participant",
+      password: demoPasswordHash,
     },
   });
 
@@ -31,6 +40,7 @@ async function main() {
       name: "Dr. Sarah Chen",
       role: "REVIEWER",
       organization: "PharmaCorp Trial Coordinator",
+      password: demoPasswordHash,
     },
   });
 

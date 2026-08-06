@@ -25,7 +25,8 @@ Build a web app where:
 Requires Node `^20.19 || ^22.12 || >=24.0` (see `.nvmrc` — `nvm use` will pick it up).
 
 1. Clone the repository to your local machine
-2. Copy the environment file: `cp .env.example .env`
+2. Copy the environment file: `cp .env.example .env` (includes a dev `AUTH_SECRET` used to
+   sign session cookies — replace it with your own random value for anything beyond local dev)
 3. Install dependencies: `npm install`
 4. Generate Prisma client: `npx prisma generate`
 5. Run database migrations: `npx prisma migrate dev`
@@ -58,8 +59,27 @@ The project uses Prisma with SQLite. The schema is defined in `prisma/schema.pri
 
 ### User
 
-- `id`, `email`, `name`, `role` (PATIENT or REVIEWER), `organization`
+- `id`, `email`, `name`, `role` (PATIENT or REVIEWER), `organization`, `password`
+  (scrypt hash, see `src/lib/auth.ts`)
 - Patients submit enrollment applications, Reviewers (trial coordinators) screen them
+
+### Authentication
+
+- Credential login (email + password) against the `User` table, no third-party auth
+  library — see the FAQ below.
+- `POST /api/auth/login` verifies the password (`src/lib/auth.ts`, Node's built-in
+  `scrypt`) and sets an httpOnly, HMAC-signed session cookie (`src/lib/session.ts`,
+  Web Crypto) containing the user's id and role. No `Session` table — the signature is
+  what makes the cookie trustworthy, so there's nothing to look up server-side.
+- `POST /api/auth/logout` clears the cookie. `GET /api/auth/me` returns the current
+  user (used by client components; server components/route handlers can call
+  `getCurrentUser()` from `src/lib/current-user.ts` directly).
+- `src/proxy.ts` (Next.js 16's replacement for `middleware.ts`) gates `/intake/*` to
+  signed-in PATIENTs and `/queue/*` to signed-in REVIEWERs, redirecting otherwise — so
+  route protection can't be forgotten on a new page under either path. It also makes
+  `/` a sign-in-only page: an authenticated visitor is redirected straight to their
+  home (`/intake` or `/queue`) before the sign-in form ever renders, and a signed-out
+  visitor to a protected route is bounced back to `/`.
 
 ### Intake
 
@@ -84,7 +104,9 @@ The project uses Prisma with SQLite. The schema is defined in `prisma/schema.pri
 
 ## Demo Users
 
-The database is seeded with two demo users:
+The database is seeded with two demo users. Both use the password `password123`
+(see `prisma/seed.ts`) — the password field is real (scrypt-hashed, checked at
+login), this is just a shared fixture for a take-home, not a real secret.
 
 | Email               | Role     | Organization                 |
 | ------------------- | -------- | ---------------------------- |
@@ -98,9 +120,7 @@ src/
 ├── app/
 │   ├── layout.tsx            # Root layout
 │   ├── globals.css           # Global styles
-│   ├── page.tsx              # Home page with challenge overview
-│   ├── login/
-│   │   └── page.tsx          # Login page (stub)
+│   ├── page.tsx              # "/" — sign-in page (Patient/Reviewer), the default entry point
 │   ├── intake/
 │   │   └── page.tsx          # Patient enrollment application page (stub)
 │   ├── queue/
