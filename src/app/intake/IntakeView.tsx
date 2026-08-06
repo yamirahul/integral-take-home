@@ -6,9 +6,9 @@
 
 import { useState, FormEvent } from "react";
 import styles from "./intake.module.css";
-import LogoutButton from "@/components/LogoutButton";
-
-type IntakeStatus = "PENDING" | "IN_REVIEW" | "APPROVED" | "REJECTED";
+import AppHeader from "@/components/AppHeader";
+import { shortRef } from "@/lib/format";
+import { IntakeStatus, STATUS_LABEL } from "@/lib/intake-status";
 
 interface IntakeSummary {
   id: string;
@@ -43,20 +43,6 @@ const EMPTY_FORM: FormState = {
   description: "",
   notes: "",
 };
-
-const STATUS_LABEL: Record<IntakeStatus, string> = {
-  PENDING: "Pending",
-  IN_REVIEW: "In Review",
-  APPROVED: "Approved",
-  REJECTED: "Rejected",
-};
-
-// Cosmetic short reference (mockup shows "INT-006") derived from the real cuid — the
-// database's actual primary key is what everything (audit log, review actions) keys off,
-// this is purely a friendlier label to show the patient.
-function shortRef(id: string): string {
-  return `INT-${id.slice(-6).toUpperCase()}`;
-}
 
 function StatusBadge({ status }: { status: IntakeStatus }) {
   const badgeClass = {
@@ -165,15 +151,7 @@ export default function IntakeView({
 
   return (
     <main className={styles.page}>
-      <div className={styles.topBar}>
-        <div>
-          <div className={styles.brand}>Intake Review System</div>
-          <div className={styles.userInfo}>
-            Signed in as {user.name} ({user.email})
-          </div>
-        </div>
-        <LogoutButton />
-      </div>
+      <AppHeader user={user} />
 
       {view === "form" ? (
         <div className={styles.card}>

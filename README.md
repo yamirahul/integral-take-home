@@ -102,6 +102,31 @@ The project uses Prisma with SQLite. The schema is defined in `prisma/schema.pri
 - **Note:** This model is already provided. Your task is the upload handling and file
   storage, not the schema design.
 
+### Document uploads & storage (Goal 3)
+
+`Document` is scoped to exactly one `Intake` in the schema above, and per the note, that
+wasn't redesigned. "Upload once, reuse across every application" is built on top of it
+instead:
+
+- Files are stored on disk under `storage/` (gitignored — not committed like `dev.db` is),
+  named by the **SHA-256 hash of their contents** (`src/lib/documents.ts`). Identical bytes
+  always resolve to the same path, so uploading the same file twice, or reusing a document
+  on a second intake, never writes a duplicate to disk — it only adds another `Document`
+  row pointing at the same stored file.
+- `POST /api/documents/attach` is that reuse action: given a `documentId` you already own
+  and one or more `intakeIds`, it creates a new `Document` row per intake, each with the
+  same `filePath` — no re-upload, no new bytes written. `POST /api/documents` (the upload
+  route itself) takes multiple `intakeIds` too, so a fresh upload can attach to several
+  applications in the same request the file is written in.
+- The `/documents` page computes a per-patient "library" by grouping their `Document` rows
+  by `filePath` — rows sharing a `filePath` are the same file attached to multiple
+  applications, shown as one library entry with a chip per attached application.
+- Files are **never** served as static assets (nothing under `storage/` is inside
+  `public/`). The only way to read one is `GET /api/documents/[id]/file`, which checks
+  the requester is either the uploading Patient or a Reviewer before streaming bytes.
+- Accepted: PDF and photos (JPEG/PNG/WEBP/HEIC), up to 10MB, validated server-side
+  regardless of what the browser's file picker allowed through.
+
 ## Demo Users
 
 The database is seeded with two demo users. Both use the password `password123`
@@ -117,37 +142,65 @@ login), this is just a shared fixture for a take-home, not a real secret.
 
 ```
 src/
+├── proxy.ts                  # Route guard (Next 16's middleware.ts rename) — auth + role gating
 ├── app/
 │   ├── layout.tsx            # Root layout
 │   ├── globals.css           # Global styles
-│   ├── page.tsx              # "/" — sign-in page (Patient/Reviewer), the default entry point
+│   ├── page.tsx              # "/" — sign-in page (Patient/Reviewer toggle), default entry point
 │   ├── intake/
-│   │   └── page.tsx          # Patient enrollment application page (stub)
+│   │   ├── page.tsx          # Server Component: auth + initial data for /intake
+│   │   ├── IntakeView.tsx    # Enrollment form, success screen, "Your Applications" list
+│   │   └── intake.module.css
+│   ├── documents/
+│   │   ├── page.tsx          # Server Component: auth + initial data for /documents
+│   │   ├── DocumentsView.tsx # Upload form + per-patient document library (Goal 3)
+│   │   └── documents.module.css
 │   ├── queue/
 │   │   └── page.tsx          # Reviewer queue page (stub)
 │   └── api/
+│       ├── auth/
+│       │   ├── login/route.ts    # POST — verify credentials, set session cookie
+│       │   ├── logout/route.ts   # POST — clear session cookie
+│       │   └── me/route.ts       # GET — current user
 │       ├── intakes/
-│       │   ├── route.ts      # GET all intakes, POST new intake (stub)
+│       │   ├── route.ts          # GET (role-scoped list) / POST (create) intakes
 │       │   └── [id]/
-│       │       └── route.ts  # GET/PATCH single intake (stub)
+│       │       └── route.ts      # GET/PATCH single intake (stub — Goals 5/6)
+│       ├── documents/
+│       │   ├── route.ts          # GET (library) / POST (upload) documents
+│       │   ├── attach/route.ts   # POST — reuse an existing document on another intake
+│       │   └── [id]/
+│       │       ├── route.ts      # DELETE — remove one attachment
+│       │       └── file/route.ts # GET — stream file bytes (auth-gated)
 │       └── users/
-│           └── route.ts      # GET users (implemented — reference example)
+│           └── route.ts          # GET users (reference example)
 ├── components/
-│   ├── AuditLog.tsx          # Audit trail display (stub)
-│   ├── IntakeDetail.tsx      # Privileged/redacted detail view (stub)
-│   └── Add additional components as needed...
+│   ├── AppHeader.tsx         # Shared patient-page header + nav (New Intake / Documents)
+│   ├── LogoutButton.tsx
+│   ├── AuditLog.tsx          # Audit trail display (stub — Goal 7)
+│   └── IntakeDetail.tsx      # Privileged/redacted detail view (stub — Goal 5)
 ├── lib/
-│   └── prisma.ts             # Prisma client singleton
+│   ├── prisma.ts             # Prisma client singleton
+│   ├── auth.ts               # Password hashing (scrypt)
+│   ├── session.ts            # Signed session cookie (Web Crypto — Edge + Node safe)
+│   ├── current-user.ts       # getCurrentUser() for Server Components/route handlers
+│   ├── intakes.ts            # Shared role-scoped intake query
+│   ├── documents.ts          # Content-addressed file storage (server-only, Node fs/crypto)
+│   ├── format.ts             # Client-safe display formatting (shortRef, formatFileSize)
+│   └── intake-status.ts      # Shared IntakeStatus type + labels
+├── styles/
+│   └── shell.module.css      # Shared card/field/button/badge primitives, composed by pages
 prisma/
 ├── schema.prisma             # Database schema
 ├── seed.ts                   # Seed script
-└── migrations/               # Migration history
+└── migrations/                # Migration history
+storage/documents/            # Uploaded files, content-addressed (gitignored — see Goal 3 above)
 dev.db                        # SQLite database (repo root)
 ```
 
-`GET /api/users` is already implemented as a working reference for the Prisma + route
-handler pattern — use it to confirm your setup works before building anything else.
-Everything else marked "(stub)" is yours to fill in.
+`GET /api/users` was implemented as the starting reference for the Prisma + route handler
+pattern. Auth (Goal 1), the enrollment form (Goal 2), and document uploads (Goal 3) are now
+built; queue/detail-view/status-updates/audit-trail (Goals 4-7) are still stubs.
 
 ## Goals
 

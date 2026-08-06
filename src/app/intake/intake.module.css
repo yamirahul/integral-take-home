@@ -6,54 +6,25 @@
      required `description` column, so it has nowhere to collect it.
    - The mockup's "← Back to Login" and "Return to Home" don't map to a real
      destination anymore (root "/" bounces a signed-in patient straight back here —
-     see src/proxy.ts), so that spot is a Log Out control instead. */
+     see src/proxy.ts), so that spot is a Log Out control instead.
+
+   Generic pieces (card, field, button, badge) come from src/styles/shell.module.css via
+   `composes` — only what's actually specific to this page lives here. */
 
 .page {
-  min-height: 100vh;
-  background: #fafafa;
-  padding: 2.5rem 1.5rem 4rem;
-}
-
-.topBar {
-  max-width: 640px;
-  margin: 0 auto 1.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.brand {
-  font-weight: 700;
-  font-size: 1.1rem;
-}
-
-.userInfo {
-  color: #6b7280;
-  font-size: 0.85rem;
-  margin-top: 0.15rem;
+  composes: page from "../../styles/shell.module.css";
 }
 
 .card {
-  max-width: 640px;
-  margin: 0 auto;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
-  padding: 2rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  composes: card from "../../styles/shell.module.css";
 }
 
 .cardTitle {
-  font-size: 1.4rem;
-  font-weight: 700;
-  margin: 0;
+  composes: cardTitle from "../../styles/shell.module.css";
 }
 
 .cardSubtitle {
-  color: #6b7280;
-  margin: 0.5rem 0 0;
-  font-size: 0.9rem;
-  line-height: 1.5;
+  composes: cardSubtitle from "../../styles/shell.module.css";
 }
 
 .formGrid {
@@ -63,59 +34,39 @@
 }
 
 .field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
-  margin: 1.25rem 0;
+  composes: field from "../../styles/shell.module.css";
 }
 
 .label {
-  font-size: 0.875rem;
-  font-weight: 600;
+  composes: label from "../../styles/shell.module.css";
 }
 
 .required {
-  color: #b91c1c;
+  composes: required from "../../styles/shell.module.css";
 }
 
-.input,
-.textarea {
-  padding: 0.65rem 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-family: inherit;
+.input {
+  composes: input from "../../styles/shell.module.css";
 }
 
 .textarea {
-  resize: vertical;
-  min-height: 5rem;
-}
-
-.input:focus,
-.textarea:focus {
-  outline: 2px solid #111827;
-  outline-offset: -1px;
+  composes: textarea from "../../styles/shell.module.css";
 }
 
 .inputInvalid {
-  border-color: #b91c1c;
+  composes: inputInvalid from "../../styles/shell.module.css";
 }
 
 .hint {
-  color: #9ca3af;
-  font-size: 0.78rem;
+  composes: hint from "../../styles/shell.module.css";
 }
 
 .fieldError {
-  color: #b91c1c;
-  font-size: 0.8rem;
+  composes: fieldError from "../../styles/shell.module.css";
 }
 
 .divider {
-  border: none;
-  border-top: 1px solid #e5e7eb;
-  margin: 1.5rem 0;
+  composes: divider from "../../styles/shell.module.css";
 }
 
 .consentBox {
@@ -128,57 +79,23 @@
 }
 
 .topLevelError {
-  margin: 0 0 1.25rem;
-  padding: 0.65rem 0.85rem;
-  border-radius: 8px;
-  background: #fef2f2;
-  color: #b91c1c;
-  font-size: 0.875rem;
+  composes: topLevelError from "../../styles/shell.module.css";
 }
 
 .actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
+  composes: actions from "../../styles/shell.module.css";
 }
 
 .cancelButton {
-  padding: 0.65rem 1.25rem;
-  border-radius: 8px;
-  border: 1px solid #d1d5db;
-  background: #fff;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
+  composes: cancelButton from "../../styles/shell.module.css";
 }
 
 .submitButton {
-  padding: 0.65rem 1.25rem;
-  border-radius: 8px;
-  border: none;
-  background: #111827;
-  color: #fff;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.submitButton:disabled,
-.cancelButton:disabled {
-  opacity: 0.6;
-  cursor: default;
+  composes: submitButton from "../../styles/shell.module.css";
 }
 
 .dangerButton {
-  padding: 0.65rem 1.25rem;
-  border-radius: 8px;
-  border: none;
-  background: #b91c1c;
-  color: #fff;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
+  composes: dangerButton from "../../styles/shell.module.css";
 }
 
 /* "Clear Intake" confirmation — replaces the normal action row in place rather than a
@@ -305,30 +222,21 @@
 }
 
 .badge {
-  flex-shrink: 0;
-  padding: 0.25rem 0.6rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  white-space: nowrap;
+  composes: badge from "../../styles/shell.module.css";
 }
 
 .badgePENDING {
-  background: #fef3c7;
-  color: #92400e;
+  composes: badgePENDING from "../../styles/shell.module.css";
 }
 
 .badgeIN_REVIEW {
-  background: #dbeafe;
-  color: #1e40af;
+  composes: badgeIN_REVIEW from "../../styles/shell.module.css";
 }
 
 .badgeAPPROVED {
-  background: #d1fae5;
-  color: #065f46;
+  composes: badgeAPPROVED from "../../styles/shell.module.css";
 }
 
 .badgeREJECTED {
-  background: #fee2e2;
-  color: #991b1b;
+  composes: badgeREJECTED from "../../styles/shell.module.css";
 }

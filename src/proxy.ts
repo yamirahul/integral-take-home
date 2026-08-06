@@ -22,7 +22,9 @@ export async function proxy(request: NextRequest) {
   const session = await verifySession(request.cookies.get(SESSION_COOKIE_NAME)?.value);
   const { pathname } = request.nextUrl;
 
-  const isPatientRoute = pathname.startsWith("/intake");
+  // /documents is the patient's supporting-document library (Goal 3) — same gating as
+  // /intake, both are patient-only pages.
+  const isPatientRoute = pathname.startsWith("/intake") || pathname.startsWith("/documents");
   const isReviewerRoute = pathname.startsWith("/queue");
 
   // Not signed in and hitting a protected route -> bounce to "/" (the sign-in page).
@@ -51,5 +53,5 @@ export async function proxy(request: NextRequest) {
 // Only run this (and pay the cookie-verification cost) on the routes that actually need
 // gating, not on every static asset request.
 export const config = {
-  matcher: ["/", "/intake/:path*", "/queue/:path*"],
+  matcher: ["/", "/intake/:path*", "/documents/:path*", "/queue/:path*"],
 };

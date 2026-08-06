@@ -37,3 +37,8 @@ next-env.d.ts
 
 /src/generated/prisma
 .claude/
+
+# uploaded supporting documents (Goal 3) — content-addressed files, not source.
+# See src/lib/documents.ts. The DB rows referencing them (dev.db) are still committed
+# per the README's convention; the binary file contents are not.
+/storage/

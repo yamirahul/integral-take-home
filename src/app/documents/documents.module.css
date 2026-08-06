@@ -1,0 +1,274 @@
+/* No design-inspiration mockup exists for document uploads (the README says the mockups
+   predate this feature), so this follows the visual language already established on
+   /intake — same shell.module.css primitives, same card/field/button treatment.
+
+   Generic pieces come from src/styles/shell.module.css via `composes`; only what's
+   specific to the document library lives here. */
+
+.page {
+  composes: page from "../../styles/shell.module.css";
+}
+
+.card {
+  composes: card from "../../styles/shell.module.css";
+}
+
+.cardTitle {
+  composes: cardTitle from "../../styles/shell.module.css";
+}
+
+.cardSubtitle {
+  composes: cardSubtitle from "../../styles/shell.module.css";
+}
+
+.field {
+  composes: field from "../../styles/shell.module.css";
+}
+
+.label {
+  composes: label from "../../styles/shell.module.css";
+}
+
+.required {
+  composes: required from "../../styles/shell.module.css";
+}
+
+.input {
+  composes: input from "../../styles/shell.module.css";
+}
+
+.textarea {
+  composes: textarea from "../../styles/shell.module.css";
+}
+
+.inputInvalid {
+  composes: inputInvalid from "../../styles/shell.module.css";
+}
+
+.hint {
+  composes: hint from "../../styles/shell.module.css";
+}
+
+.fieldError {
+  composes: fieldError from "../../styles/shell.module.css";
+}
+
+.topLevelError {
+  composes: topLevelError from "../../styles/shell.module.css";
+}
+
+.topLevelNotice {
+  composes: topLevelNotice from "../../styles/shell.module.css";
+}
+
+.actions {
+  composes: actions from "../../styles/shell.module.css";
+}
+
+.cancelButton {
+  composes: cancelButton from "../../styles/shell.module.css";
+}
+
+.submitButton {
+  composes: submitButton from "../../styles/shell.module.css";
+}
+
+.dangerButton {
+  composes: dangerButton from "../../styles/shell.module.css";
+}
+
+.badge {
+  composes: badge from "../../styles/shell.module.css";
+}
+
+.badgePENDING {
+  composes: badgePENDING from "../../styles/shell.module.css";
+}
+
+.badgeIN_REVIEW {
+  composes: badgeIN_REVIEW from "../../styles/shell.module.css";
+}
+
+.badgeAPPROVED {
+  composes: badgeAPPROVED from "../../styles/shell.module.css";
+}
+
+.badgeREJECTED {
+  composes: badgeREJECTED from "../../styles/shell.module.css";
+}
+
+.emptyStateCard {
+  composes: card;
+  text-align: center;
+}
+
+.emptyStateText {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin: 0 0 1.25rem;
+  line-height: 1.5;
+}
+
+.fileRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px dashed #d1d5db;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  color: #6b7280;
+}
+
+.fileRow svg {
+  flex-shrink: 0;
+  color: #9ca3af;
+}
+
+.fileRowChosen {
+  border-style: solid;
+  color: #111827;
+}
+
+.libraryCard {
+  composes: card;
+  margin-top: 1.5rem;
+}
+
+.libraryHeader {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0 0 1rem;
+}
+
+.libraryEmpty {
+  color: #9ca3af;
+  font-size: 0.88rem;
+}
+
+.libraryRow {
+  display: flex;
+  gap: 0.85rem;
+  padding: 1rem 0;
+  border-top: 1px solid #f3f4f6;
+}
+
+.libraryRow:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.libraryIcon {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background: #f3f4f6;
+  color: #4b5563;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.libraryMain {
+  min-width: 0;
+  flex: 1;
+}
+
+.libraryFileName {
+  font-weight: 600;
+  font-size: 0.9rem;
+  word-break: break-word;
+}
+
+.libraryMeta {
+  color: #9ca3af;
+  font-size: 0.78rem;
+  margin-top: 0.15rem;
+}
+
+.libraryDescription {
+  color: #6b7280;
+  font-size: 0.82rem;
+  margin-top: 0.35rem;
+}
+
+.attachedRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.attachChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.attachChipRemove {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1;
+  color: inherit;
+  opacity: 0.6;
+  padding: 0;
+}
+
+.attachChipRemove:hover {
+  opacity: 1;
+}
+
+.libraryActions {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-top: 0.7rem;
+}
+
+.linkButton {
+  border: none;
+  background: none;
+  padding: 0;
+  color: #111827;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.attachPicker {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.45rem;
+  margin-top: 0.7rem;
+  padding: 0.75rem 0.85rem;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.attachPickerOption {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.attachPickerOption:first-of-type {
+  padding-bottom: 0.45rem;
+  margin-bottom: 0.15rem;
+  border-bottom: 1px solid #e5e7eb;
+  width: 100%;
+}
+
+.attachPicker .cancelButton {
+  margin-top: 0.4rem;
+}
