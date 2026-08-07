@@ -197,6 +197,31 @@ accepts a `status` field — either key, or both, in one request.
   open first. Both it and the detail view's control call the exact same `PATCH`, so
   there's one source of truth for what counts as a real change.
 
+### Audit Trail (Goal 7)
+
+Every prior goal was already writing `AuditLog` rows as it went — `CREATED` (Goal 2),
+`DOCUMENT_UPLOADED` (Goal 3), `ASSIGNED` (Goal 4), `VIEWED` (Goal 5), `STATUS_CHANGED`
+(Goal 6). This goal is entirely about displaying what's already being recorded, not
+recording anything new.
+
+- `src/lib/audit.ts` — one query (global, or filtered to a single `intakeId`), used by
+  both surfaces below, same pattern as `src/lib/intakes.ts`.
+- `src/lib/audit-format.ts` — turns each entry's `action` + JSON `details` into one plain
+  sentence ("Dr. Sarah Chen changed status from Pending to In Review."), client-safe (no
+  Node dependencies) so it runs in the browser, not just the server.
+- **`/queue/audit`** — a new Reviewer-only page (added to the header's nav, next to
+  Review Queue) listing every action across every application, searchable by name/ID and
+  filterable by action type — reuses `queue.module.css`'s card/toolbar chrome rather than
+  duplicating it a third time.
+- **Per-application history** — the same list, filtered to one `intakeId`, embedded at
+  the bottom of the Reviewer's detail view (`/queue/[id]`). Not shown on a Patient's own
+  detail page (`/intake/[id]`) — the audit trail is a Reviewer/compliance surface, the
+  same scope line Goal 5's toggle and Goal 6's status control already drew.
+- `src/components/AuditLog.tsx` is the shared list renderer both surfaces use — one
+  component, an `showApplication` prop toggling whether each row also names which
+  application it belongs to (needed on the global list, redundant on the per-application
+  one).
+
 ## Demo Users
 
 The database is seeded with two demo users. Both use the password `password123`
@@ -229,10 +254,13 @@ src/
 │   │   └── documents.module.css
 │   ├── queue/
 │   │   ├── page.tsx          # Server Component: auth + initial data for /queue
-│   │   ├── QueueView.tsx     # Stat cards, search/filter, table, self-assign (Goal 4)
+│   │   ├── QueueView.tsx     # Stat cards, search/filter, table, self-assign + inline status (Goals 4 & 6)
 │   │   ├── queue.module.css
-│   │   └── [id]/
-│   │       └── page.tsx      # Reviewer's detail view — IntakeDetail with the toggle on (Goal 5)
+│   │   ├── [id]/
+│   │   │   └── page.tsx      # Reviewer's detail view — IntakeDetail with toggle + status + audit trail on
+│   │   └── audit/
+│   │       ├── page.tsx          # Server Component: auth + all audit log entries (Goal 7)
+│   │       └── AuditTrailView.tsx # Search + action-type filter over the full log
 │   └── api/
 │       ├── auth/
 │       │   ├── login/route.ts    # POST — verify credentials, set session cookie
@@ -254,7 +282,8 @@ src/
 │   ├── AppHeader.tsx         # Shared top bar (brand, role-specific nav, user, logout) — every page
 │   ├── AppHeader.module.css
 │   ├── LogoutButton.tsx
-│   ├── AuditLog.tsx          # Audit trail display (stub — Goal 7)
+│   ├── AuditLog.tsx          # Shared audit list renderer, used by /queue/audit and /queue/[id] (Goal 7)
+│   ├── AuditLog.module.css
 │   ├── IntakeDetail.tsx      # Shared detail view, used by both /queue/[id] and /intake/[id] (Goal 5)
 │   └── IntakeDetail.module.css
 ├── lib/
@@ -265,6 +294,8 @@ src/
 │   ├── intakes.ts            # Shared intake queries: safe-field lists (Goal 4) + full detail w/ redaction (Goal 5)
 │   ├── redact.ts             # SSN/phone/DOB masking for a Reviewer's redacted view (Goal 5)
 │   ├── documents.ts          # Content-addressed file storage (server-only, Node fs/crypto)
+│   ├── audit.ts              # Shared audit log query — global or filtered to one intake (Goal 7)
+│   ├── audit-format.ts       # Client-safe "action + details -> one sentence" formatting (Goal 7)
 │   ├── format.ts             # Client-safe display formatting (shortRef, formatFileSize, formatDateTime)
 │   └── intake-status.ts      # Shared IntakeStatus type + labels
 ├── styles/
@@ -278,9 +309,8 @@ dev.db                        # SQLite database (repo root)
 ```
 
 `GET /api/users` was implemented as the starting reference for the Prisma + route handler
-pattern. Auth (Goal 1), the enrollment form (Goal 2), document uploads (Goal 3), the
-review queue (Goal 4), the detail view (Goal 5), and status updates (Goal 6) are now
-built; the audit trail (Goal 7) is still a stub.
+pattern. All 7 required goals are now built: auth, the enrollment form, document uploads,
+the review queue, the detail view, status updates, and the audit trail.
 
 ## Goals
 

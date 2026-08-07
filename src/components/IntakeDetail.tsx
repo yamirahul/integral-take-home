@@ -16,8 +16,10 @@ import { useState } from "react";
 import Link from "next/link";
 import styles from "./IntakeDetail.module.css";
 import AppHeader from "./AppHeader";
+import AuditLog from "./AuditLog";
 import { formatFileSize, formatDateTime, shortRef } from "@/lib/format";
 import { ALL_STATUSES, IntakeStatus, STATUS_LABEL } from "@/lib/intake-status";
+import type { AuditEntry } from "@/lib/audit-format";
 
 interface NavItem {
   href: string;
@@ -150,6 +152,7 @@ export default function IntakeDetail({
   canManageStatus,
   initialIntake,
   documents,
+  auditEntries,
 }: {
   currentUser: { name: string; role: "PATIENT" | "REVIEWER" };
   navItems: NavItem[];
@@ -159,6 +162,10 @@ export default function IntakeDetail({
   canManageStatus: boolean;
   initialIntake: IntakeDetailData;
   documents: DocumentRow[];
+  // Omitted entirely (not just empty) on the Patient's own detail page — the audit
+  // trail is a Reviewer/compliance concern, not something patients currently see. See
+  // the README's Goal 7 section for that call.
+  auditEntries?: AuditEntry[];
 }) {
   const [intake, setIntake] = useState<IntakeDetailData>(initialIntake);
   const [isSwitching, setIsSwitching] = useState(false);
@@ -364,6 +371,13 @@ export default function IntakeDetail({
                 ))
               )}
             </div>
+
+            {auditEntries && (
+              <div className={styles.section}>
+                <h2 className={styles.sectionTitle}>Audit Trail</h2>
+                <AuditLog entries={auditEntries} emptyText="No recorded activity yet." />
+              </div>
+            )}
           </div>
         </div>
       </main>

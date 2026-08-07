@@ -6,6 +6,7 @@
 import { redirect, notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/current-user";
 import { getIntakeDetail } from "@/lib/intakes";
+import { listAuditLogs } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import IntakeDetail from "@/components/IntakeDetail";
 import { REVIEWER_NAV } from "@/components/AppHeader";
@@ -21,9 +22,10 @@ export default async function QueueDetailPage({ params }: PageProps) {
   if (!user) redirect("/");
   if (user.role !== "REVIEWER") redirect("/intake");
 
-  const [intake, documents] = await Promise.all([
+  const [intake, documents, auditLogs] = await Promise.all([
     getIntakeDetail(id, user, { privileged: false }),
     prisma.document.findMany({ where: { intakeId: id }, orderBy: { createdAt: "desc" } }),
+    listAuditLogs({ intakeId: id }),
   ]);
 
   if (!intake) notFound();
@@ -58,6 +60,14 @@ export default async function QueueDetailPage({ params }: PageProps) {
         fileSize: doc.fileSize,
         description: doc.description,
         createdAt: doc.createdAt.toISOString(),
+      }))}
+      auditEntries={auditLogs.map((log) => ({
+        id: log.id,
+        action: log.action,
+        details: log.details,
+        createdAt: log.createdAt.toISOString(),
+        user: log.user,
+        intake: log.intake,
       }))}
     />
   );

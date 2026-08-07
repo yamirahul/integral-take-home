@@ -23,9 +23,10 @@ export const PATIENT_NAV: NavItem[] = [
   { href: "/documents", label: "Documents" },
 ];
 
-// Just one tab today — Audit Trail is Goal 7. Add it here (and nowhere else) once that
-// page exists.
-export const REVIEWER_NAV: NavItem[] = [{ href: "/queue", label: "Review Queue" }];
+export const REVIEWER_NAV: NavItem[] = [
+  { href: "/queue", label: "Review Queue" },
+  { href: "/queue/audit", label: "Audit Trail" },
+];
 
 const ROLE_LABEL: Record<"PATIENT" | "REVIEWER", string> = {
   PATIENT: "Patient",
