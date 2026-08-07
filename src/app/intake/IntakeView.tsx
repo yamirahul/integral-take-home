@@ -9,6 +9,7 @@ import Link from "next/link";
 import styles from "./intake.module.css";
 import AppHeader, { PATIENT_NAV } from "@/components/AppHeader";
 import { shortRef } from "@/lib/format";
+import { formatPhoneInput, formatSsnInput } from "@/lib/input-format";
 import { IntakeStatus, STATUS_LABEL } from "@/lib/intake-status";
 
 // The "Your Applications" list only ever renders a reference number, status, and
@@ -212,10 +213,12 @@ export default function IntakeView({
                   <input
                     id="clientPhone"
                     type="tel"
+                    inputMode="numeric"
+                    maxLength={14}
                     className={`${styles.input} ${fieldErrors.clientPhone ? styles.inputInvalid : ""}`}
                     placeholder="(555) 123-4567"
                     value={form.clientPhone}
-                    onChange={(e) => updateField("clientPhone", e.target.value)}
+                    onChange={(e) => updateField("clientPhone", formatPhoneInput(e.target.value))}
                   />
                   {fieldErrors.clientPhone && <span className={styles.fieldError}>{fieldErrors.clientPhone}</span>}
                 </div>
@@ -228,10 +231,12 @@ export default function IntakeView({
                   </label>
                   <input
                     id="ssn"
+                    inputMode="numeric"
+                    maxLength={11}
                     className={`${styles.input} ${fieldErrors.ssn ? styles.inputInvalid : ""}`}
                     placeholder="123-45-6789"
                     value={form.ssn}
-                    onChange={(e) => updateField("ssn", e.target.value)}
+                    onChange={(e) => updateField("ssn", formatSsnInput(e.target.value))}
                   />
                   <span className={styles.hint}>Format: XXX-XX-XXXX</span>
                   {fieldErrors.ssn && <span className={styles.fieldError}>{fieldErrors.ssn}</span>}
