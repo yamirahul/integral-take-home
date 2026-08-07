@@ -185,6 +185,66 @@
   word-break: break-word;
 }
 
+/* Status-change control (Goal 6) — reviewer-only. Same 4-color vocabulary as the
+   badges/queue stat cards (reviewer-dashboard.png): amber Pending, blue In Review,
+   green Approved, red Rejected. Inactive buttons stay neutral so the one active status
+   is the only thing carrying color, same principle as the badges elsewhere. */
+.statusControlWrap {
+  margin-top: 1.25rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+.statusControl {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.statusButton {
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  border: 1.5px solid #e5e7eb;
+  background: #fff;
+  color: #6b7280;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.statusButton:disabled {
+  cursor: default;
+}
+
+.statusButton:not(:disabled):hover {
+  border-color: #d1d5db;
+}
+
+.statusButtonActivePENDING {
+  background: #fef3c7;
+  border-color: #fbbf24;
+  color: #92400e;
+}
+
+.statusButtonActiveIN_REVIEW {
+  background: #dbeafe;
+  border-color: #60a5fa;
+  color: #1e40af;
+}
+
+.statusButtonActiveAPPROVED {
+  background: #d1fae5;
+  border-color: #34d399;
+  color: #047857;
+}
+
+.statusButtonActiveREJECTED {
+  background: #fee2e2;
+  border-color: #f87171;
+  color: #b91c1c;
+}
+
 .fieldValueMasked {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   color: #92400e;

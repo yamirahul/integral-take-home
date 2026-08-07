@@ -176,6 +176,27 @@ sign-in) — a table of every application, with stat-card counts by status, sear
   each opens `GET /api/documents/[id]/file` (already auth-gated, unchanged from Goal 3)
   in a new tab.
 
+### Status Updates (Goal 6)
+
+`PATCH /api/intakes/[id]` (the same endpoint Goal 4 built for self-assignment) now also
+accepts a `status` field — either key, or both, in one request.
+
+- **Not restricted to a linear pipeline.** Any Reviewer can set any of the 4 statuses
+  (`PENDING`, `IN_REVIEW`, `APPROVED`, `REJECTED`) at any time, including moving
+  "backwards" — a wrong call is correctable without a special "reopen" flow. What's
+  enforced instead is that every change is real and recorded: each actual transition
+  writes its own `STATUS_CHANGED` audit entry (`{ from, to }`); re-setting the status it's
+  already at is a `200` no-op, not a fake audit entry.
+- The status control on the Reviewer's detail view (`/queue/[id]`) uses the same 4-color
+  vocabulary as the badges and queue stat cards from `reviewer-dashboard.png` — amber
+  Pending, blue In Review, green Approved, red Rejected — so status means the same thing
+  everywhere it appears in the app. It doesn't appear on a Patient's own detail page; only
+  a Reviewer can change status.
+- The Review Queue table also has an inline status `<select>` per row (styled to the same
+  4 colors) — a second, faster path for the common case of not needing the full record
+  open first. Both it and the detail view's control call the exact same `PATCH`, so
+  there's one source of truth for what counts as a real change.
+
 ## Demo Users
 
 The database is seeded with two demo users. Both use the password `password123`
@@ -220,7 +241,7 @@ src/
 │       ├── intakes/
 │       │   ├── route.ts          # GET (role-scoped list) / POST (create) intakes
 │       │   └── [id]/
-│       │       └── route.ts      # GET (privileged/redacted toggle, Goal 5) / PATCH self-assign (Goal 4, extends for Goal 6)
+│       │       └── route.ts      # GET (privileged/redacted toggle, Goal 5) / PATCH assign + status (Goals 4 & 6)
 │       ├── documents/
 │       │   ├── route.ts          # GET (library) / POST (upload) documents
 │       │   ├── attach/route.ts   # POST — reuse an existing document on another intake
@@ -258,8 +279,8 @@ dev.db                        # SQLite database (repo root)
 
 `GET /api/users` was implemented as the starting reference for the Prisma + route handler
 pattern. Auth (Goal 1), the enrollment form (Goal 2), document uploads (Goal 3), the
-review queue (Goal 4), and the detail view (Goal 5) are now built; status-updates/
-audit-trail (Goals 6-7) are still stubs.
+review queue (Goal 4), the detail view (Goal 5), and status updates (Goal 6) are now
+built; the audit trail (Goal 7) is still a stub.
 
 ## Goals
 

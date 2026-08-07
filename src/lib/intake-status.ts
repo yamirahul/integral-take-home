@@ -9,3 +9,7 @@ export const STATUS_LABEL: Record<IntakeStatus, string> = {
   APPROVED: "Approved",
   REJECTED: "Rejected",
 };
+
+// The 4 statuses, in the order the README's workflow (and the status-change control on
+// the Goal 6 detail view) presents them.
+export const ALL_STATUSES: IntakeStatus[] = ["PENDING", "IN_REVIEW", "APPROVED", "REJECTED"];

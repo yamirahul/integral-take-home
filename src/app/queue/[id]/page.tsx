@@ -35,6 +35,7 @@ export default async function QueueDetailPage({ params }: PageProps) {
       backHref="/queue"
       backLabel="Back to Review Queue"
       canToggle
+      canManageStatus
       initialIntake={{
         id: intake.id,
         status: intake.status,

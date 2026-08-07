@@ -36,6 +36,7 @@ export default async function IntakeDetailPage({ params }: PageProps) {
       backHref="/intake"
       backLabel="Back to Your Applications"
       canToggle={false}
+      canManageStatus={false}
       initialIntake={{
         id: intake.id,
         status: intake.status,

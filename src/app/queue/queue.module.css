@@ -198,24 +198,47 @@
   white-space: nowrap;
 }
 
-.badge {
-  composes: badge from "../../styles/shell.module.css";
+/* Inline status control (Goal 6 follow-up) — a <select> styled to read like the badges
+   elsewhere (same amber/blue/green/red vocabulary as reviewer-dashboard.png), but
+   interactive: changing it PATCHes the application directly from the table, no need to
+   open the detail view first. */
+.statusSelect {
+  padding: 0.3rem 1.6rem 0.3rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  appearance: none;
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
 }
 
-.badgePENDING {
-  composes: badgePENDING from "../../styles/shell.module.css";
+.statusSelect:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
-.badgeIN_REVIEW {
-  composes: badgeIN_REVIEW from "../../styles/shell.module.css";
+.statusSelectPENDING {
+  background-color: #fef3c7;
+  color: #92400e;
 }
 
-.badgeAPPROVED {
-  composes: badgeAPPROVED from "../../styles/shell.module.css";
+.statusSelectIN_REVIEW {
+  background-color: #dbeafe;
+  color: #1e40af;
 }
 
-.badgeREJECTED {
-  composes: badgeREJECTED from "../../styles/shell.module.css";
+.statusSelectAPPROVED {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.statusSelectREJECTED {
+  background-color: #fee2e2;
+  color: #991b1b;
 }
 
 .reviewerCell {

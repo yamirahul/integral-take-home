@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { IntakeStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/current-user";
 import { getIntakeDetail } from "@/lib/intakes";
@@ -6,6 +7,8 @@ import { getIntakeDetail } from "@/lib/intakes";
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
+
+const VALID_STATUSES: IntakeStatus[] = ["PENDING", "IN_REVIEW", "APPROVED", "REJECTED"];
 
 // GET /api/intakes/[id] — the full-record fetch behind the detail view.
 //   ?view=privileged  — Reviewer only: full, unmasked ssn/clientPhone/dateOfBirth.
@@ -49,15 +52,17 @@ export async function GET(request: Request, { params }: RouteParams) {
   return NextResponse.json(intake);
 }
 
-// PATCH /api/intakes/[id] — currently handles Reviewer self-assignment only:
-//   { reviewerId: <your own id> }  — claim an unassigned application
-//   { reviewerId: null }           — release one you're currently assigned to
-//
-// Deliberately narrow: a Reviewer can only assign *themselves*, and can only release a
-// claim that's already theirs — not reassign someone else's. TODO(Goal 6): extend this
-// same handler with a `status` field for the PENDING -> IN_REVIEW -> APPROVED/REJECTED
-// transitions; it'll want a STATUS_CHANGED audit entry alongside the ASSIGNED one this
-// already writes.
+// PATCH /api/intakes/[id] — Reviewer self-assignment and/or status changes. Either or
+// both keys can be present in one request:
+//   { reviewerId: <your own id> | null }  — claim / release (see src/app/api/intakes/
+//     route.ts's sibling comment in the Goal 4 commit for why this is self-only)
+//   { status: "PENDING" | "IN_REVIEW" | "APPROVED" | "REJECTED" }  — set the review
+//     status. Deliberately NOT restricted to a linear PENDING -> IN_REVIEW ->
+//     APPROVED/REJECTED pipeline — any Reviewer can set any of the 4 statuses at any
+//     time, so a wrong call is correctable without a special "reopen" flow. What's
+//     actually enforced is that every change is real: each one gets its own
+//     STATUS_CHANGED audit entry (from/to), and a no-op re-set of the current status is
+//     a 200 no-op like the assignment idempotency below, not a fake audit entry.
 export async function PATCH(request: Request, { params }: RouteParams) {
   const { id } = await params;
 
@@ -70,58 +75,97 @@ export async function PATCH(request: Request, { params }: RouteParams) {
   }
 
   const body = await request.json().catch(() => null);
-  if (!body || typeof body !== "object" || !("reviewerId" in body)) {
-    return NextResponse.json({ error: "reviewerId is required." }, { status: 400 });
+  const hasReviewerId = !!body && typeof body === "object" && "reviewerId" in body;
+  const hasStatus = !!body && typeof body === "object" && "status" in body;
+  if (!hasReviewerId && !hasStatus) {
+    return NextResponse.json({ error: "reviewerId and/or status is required." }, { status: 400 });
   }
 
-  const requestedReviewerId = body.reviewerId;
-  if (requestedReviewerId !== null && requestedReviewerId !== user.id) {
+  const requestedReviewerId: string | null | undefined = hasReviewerId ? body.reviewerId : undefined;
+  if (hasReviewerId && requestedReviewerId !== null && requestedReviewerId !== user.id) {
     return NextResponse.json({ error: "You can only assign an application to yourself." }, { status: 403 });
+  }
+
+  const requestedStatus: IntakeStatus | undefined = hasStatus ? body.status : undefined;
+  if (hasStatus && !VALID_STATUSES.includes(requestedStatus as IntakeStatus)) {
+    return NextResponse.json(
+      { error: `status must be one of ${VALID_STATUSES.join(", ")}.` },
+      { status: 400 }
+    );
   }
 
   const intake = await prisma.intake.findUnique({
     where: { id },
-    select: { id: true, reviewerId: true },
+    select: { id: true, reviewerId: true, status: true },
   });
   if (!intake) {
     return NextResponse.json({ error: "Application not found." }, { status: 404 });
   }
 
-  const isClaiming = requestedReviewerId === user.id;
-  const isReleasing = requestedReviewerId === null;
+  if (hasReviewerId) {
+    const isClaiming = requestedReviewerId === user.id;
+    const isReleasing = requestedReviewerId === null;
 
-  if (isClaiming && intake.reviewerId !== null && intake.reviewerId !== user.id) {
-    return NextResponse.json({ error: "This application is already assigned to another reviewer." }, { status: 409 });
-  }
-  if (isReleasing && intake.reviewerId !== null && intake.reviewerId !== user.id) {
-    return NextResponse.json({ error: "You can only release an application assigned to you." }, { status: 403 });
+    if (isClaiming && intake.reviewerId !== null && intake.reviewerId !== user.id) {
+      return NextResponse.json(
+        { error: "This application is already assigned to another reviewer." },
+        { status: 409 }
+      );
+    }
+    if (isReleasing && intake.reviewerId !== null && intake.reviewerId !== user.id) {
+      return NextResponse.json(
+        { error: "You can only release an application assigned to you." },
+        { status: 403 }
+      );
+    }
   }
 
-  // Already in the requested state — idempotent no-op, not an error (a double-click on
-  // "Assign to me," or two tabs racing, shouldn't surface a confusing failure).
-  if (intake.reviewerId === requestedReviewerId) {
-    return NextResponse.json({ id: intake.id, reviewerId: intake.reviewerId });
+  const reviewerChanged = hasReviewerId && requestedReviewerId !== intake.reviewerId;
+  const statusChanged = hasStatus && requestedStatus !== intake.status;
+
+  // Already in the requested state on every field asked about — idempotent no-op, not
+  // an error (a double-click, or two tabs racing, shouldn't surface a confusing failure
+  // or write a misleading "changed from X to X" audit entry).
+  if (!reviewerChanged && !statusChanged) {
+    return NextResponse.json({ id: intake.id, status: intake.status, reviewerId: intake.reviewerId });
   }
 
   const updated = await prisma.$transaction(async (tx) => {
     const updatedIntake = await tx.intake.update({
       where: { id },
-      data: { reviewerId: requestedReviewerId },
+      data: {
+        ...(reviewerChanged ? { reviewerId: requestedReviewerId } : {}),
+        ...(statusChanged ? { status: requestedStatus } : {}),
+      },
       select: {
         id: true,
+        status: true,
         reviewerId: true,
         reviewer: { select: { id: true, name: true } },
       },
     });
 
-    await tx.auditLog.create({
-      data: {
-        action: "ASSIGNED",
-        details: JSON.stringify({ reviewerId: requestedReviewerId, previousReviewerId: intake.reviewerId }),
-        userId: user.id,
-        intakeId: id,
-      },
-    });
+    if (reviewerChanged) {
+      await tx.auditLog.create({
+        data: {
+          action: "ASSIGNED",
+          details: JSON.stringify({ reviewerId: requestedReviewerId, previousReviewerId: intake.reviewerId }),
+          userId: user.id,
+          intakeId: id,
+        },
+      });
+    }
+
+    if (statusChanged) {
+      await tx.auditLog.create({
+        data: {
+          action: "STATUS_CHANGED",
+          details: JSON.stringify({ from: intake.status, to: requestedStatus }),
+          userId: user.id,
+          intakeId: id,
+        },
+      });
+    }
 
     return updatedIntake;
   });

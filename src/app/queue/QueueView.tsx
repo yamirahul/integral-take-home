@@ -1,20 +1,21 @@
 "use client";
 
 // Client component: the interactive Review Queue (stat cards, search/filter, table,
-// self-assign). Split from page.tsx so the initial user + intakes fetch stays
-// server-side, only the interactive bits ship JS to the browser — same pattern as
-// IntakeView.tsx and DocumentsView.tsx.
+// self-assign, inline status changes). Split from page.tsx so the initial user +
+// intakes fetch stays server-side, only the interactive bits ship JS to the browser —
+// same pattern as IntakeView.tsx and DocumentsView.tsx.
 //
-// Detail view (the "View" action) and status changes are Goal 5 and Goal 6 — this only
-// wires up what Goal 4 asked for: the list itself, plus self-assignment, since that's
-// explicitly part of this goal ("the reviewer can assign the intake to them").
+// The detail view (src/components/IntakeDetail.tsx) also has a status control — this is
+// a second, faster path for the common case of not needing the full record open first.
+// Both call the exact same PATCH /api/intakes/[id], so there's one source of truth for
+// what a "real" status change is (see that route for the idempotency/audit-log rules).
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import styles from "./queue.module.css";
 import AppHeader, { REVIEWER_NAV } from "@/components/AppHeader";
 import { shortRef, formatDateTime } from "@/lib/format";
-import { IntakeStatus, STATUS_LABEL } from "@/lib/intake-status";
+import { ALL_STATUSES, IntakeStatus, STATUS_LABEL } from "@/lib/intake-status";
 
 interface QueueIntake {
   id: string;
@@ -89,16 +90,14 @@ function EyeIcon() {
   );
 }
 
-function StatusBadge({ status }: { status: IntakeStatus }) {
-  const badgeClass = {
-    PENDING: styles.badgePENDING,
-    IN_REVIEW: styles.badgeIN_REVIEW,
-    APPROVED: styles.badgeAPPROVED,
-    REJECTED: styles.badgeREJECTED,
-  }[status];
-
-  return <span className={`${styles.badge} ${badgeClass}`}>{STATUS_LABEL[status]}</span>;
-}
+// Same color-per-status vocabulary as the badges/stat cards, applied to the <select>
+// itself so the control reads at a glance without needing a separate badge next to it.
+const STATUS_SELECT_CLASS: Record<IntakeStatus, string> = {
+  PENDING: styles.statusSelectPENDING,
+  IN_REVIEW: styles.statusSelectIN_REVIEW,
+  APPROVED: styles.statusSelectAPPROVED,
+  REJECTED: styles.statusSelectREJECTED,
+};
 
 function StatCard({
   icon,
@@ -154,14 +153,16 @@ export default function QueueView({
     });
   }, [intakes, search, statusFilter]);
 
-  async function handleAssign(intakeId: string, reviewerId: string | null) {
+  // Shared by both "Assign to me"/"Unassign" and the status <select> — same endpoint,
+  // same idempotency/error handling, just a different body.
+  async function patchIntake(intakeId: string, body: { reviewerId?: string | null; status?: IntakeStatus }) {
     setBusyId(intakeId);
     setTopLevelError(null);
     try {
       const response = await fetch(`/api/intakes/${intakeId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reviewerId }),
+        body: JSON.stringify(body),
       });
       const data = await response.json();
 
@@ -170,14 +171,29 @@ export default function QueueView({
         return;
       }
 
+      // The idempotent no-op response omits `reviewer` (nothing changed, so there's
+      // nothing new to report) — falling back to the existing value keeps that case a
+      // true no-op on the client too, instead of clobbering it with `undefined`.
       setIntakes((prev) =>
-        prev.map((item) => (item.id === intakeId ? { ...item, reviewer: data.reviewer ?? null } : item))
+        prev.map((item) =>
+          item.id === intakeId
+            ? { ...item, status: data.status ?? item.status, reviewer: "reviewer" in data ? data.reviewer : item.reviewer }
+            : item
+        )
       );
     } catch {
       setTopLevelError("Could not reach the server. Please try again.");
     } finally {
       setBusyId(null);
     }
+  }
+
+  function handleAssign(intakeId: string, reviewerId: string | null) {
+    return patchIntake(intakeId, { reviewerId });
+  }
+
+  function handleStatusChange(intakeId: string, status: IntakeStatus) {
+    return patchIntake(intakeId, { status });
   }
 
   return (
@@ -269,7 +285,19 @@ export default function QueueView({
                       <td className={styles.emailCell}>{intake.clientEmail}</td>
                       <td className={styles.submittedCell}>{formatDateTime(intake.createdAt)}</td>
                       <td>
-                        <StatusBadge status={intake.status} />
+                        <select
+                          aria-label={`Status for ${shortRef(intake.id)}`}
+                          className={`${styles.statusSelect} ${STATUS_SELECT_CLASS[intake.status]}`}
+                          value={intake.status}
+                          disabled={busyId === intake.id}
+                          onChange={(e) => handleStatusChange(intake.id, e.target.value as IntakeStatus)}
+                        >
+                          {ALL_STATUSES.map((s) => (
+                            <option key={s} value={s}>
+                              {STATUS_LABEL[s]}
+                            </option>
+                          ))}
+                        </select>
                       </td>
                       <td className={styles.reviewerCell}>
                         {intake.reviewer === null ? (

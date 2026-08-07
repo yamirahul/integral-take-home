@@ -17,7 +17,7 @@ import Link from "next/link";
 import styles from "./IntakeDetail.module.css";
 import AppHeader from "./AppHeader";
 import { formatFileSize, formatDateTime, shortRef } from "@/lib/format";
-import { IntakeStatus, STATUS_LABEL } from "@/lib/intake-status";
+import { ALL_STATUSES, IntakeStatus, STATUS_LABEL } from "@/lib/intake-status";
 
 interface NavItem {
   href: string;
@@ -54,6 +54,16 @@ const BADGE_CLASS: Record<IntakeStatus, string> = {
   IN_REVIEW: styles.badgeIN_REVIEW,
   APPROVED: styles.badgeAPPROVED,
   REJECTED: styles.badgeREJECTED,
+};
+
+// Same palette as the badges/queue stat cards (reviewer-dashboard.png): amber Pending,
+// blue In Review, green Approved, red Rejected — one status vocabulary, one color
+// mapping, used everywhere in the app that shows a status.
+const STATUS_BUTTON_ACTIVE_CLASS: Record<IntakeStatus, string> = {
+  PENDING: styles.statusButtonActivePENDING,
+  IN_REVIEW: styles.statusButtonActiveIN_REVIEW,
+  APPROVED: styles.statusButtonActiveAPPROVED,
+  REJECTED: styles.statusButtonActiveREJECTED,
 };
 
 function LockIcon() {
@@ -137,6 +147,7 @@ export default function IntakeDetail({
   backHref,
   backLabel,
   canToggle,
+  canManageStatus,
   initialIntake,
   documents,
 }: {
@@ -145,12 +156,15 @@ export default function IntakeDetail({
   backHref: string;
   backLabel: string;
   canToggle: boolean;
+  canManageStatus: boolean;
   initialIntake: IntakeDetailData;
   documents: DocumentRow[];
 }) {
   const [intake, setIntake] = useState<IntakeDetailData>(initialIntake);
   const [isSwitching, setIsSwitching] = useState(false);
   const [toggleError, setToggleError] = useState<string | null>(null);
+  const [isChangingStatus, setIsChangingStatus] = useState(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
 
   async function switchView(view: "redacted" | "privileged") {
     if ((view === "redacted") === intake.redacted) return; // already there
@@ -168,6 +182,29 @@ export default function IntakeDetail({
       setToggleError("Could not reach the server. Please try again.");
     } finally {
       setIsSwitching(false);
+    }
+  }
+
+  async function handleStatusChange(status: IntakeStatus) {
+    if (status === intake.status) return;
+    setIsChangingStatus(true);
+    setStatusError(null);
+    try {
+      const response = await fetch(`/api/intakes/${intake.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setStatusError(data.error ?? "Could not update status.");
+        return;
+      }
+      setIntake((prev) => ({ ...prev, status: data.status }));
+    } catch {
+      setStatusError("Could not reach the server. Please try again.");
+    } finally {
+      setIsChangingStatus(false);
     }
   }
 
@@ -272,6 +309,30 @@ export default function IntakeDetail({
                   <div className={styles.fieldValue}>{intake.reviewer?.name ?? "Unassigned"}</div>
                 </div>
               </div>
+
+              {canManageStatus && (
+                <div className={styles.statusControlWrap}>
+                  <div className={styles.fieldLabel}>Update Status</div>
+                  {statusError && <p className={styles.toggleError}>{statusError}</p>}
+                  <div className={styles.statusControl} role="radiogroup" aria-label="Application status">
+                    {ALL_STATUSES.map((status) => (
+                      <button
+                        key={status}
+                        type="button"
+                        role="radio"
+                        aria-checked={intake.status === status}
+                        disabled={isChangingStatus || intake.status === status}
+                        className={`${styles.statusButton} ${
+                          intake.status === status ? STATUS_BUTTON_ACTIVE_CLASS[status] : ""
+                        }`}
+                        onClick={() => handleStatusChange(status)}
+                      >
+                        {STATUS_LABEL[status]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className={styles.section}>
