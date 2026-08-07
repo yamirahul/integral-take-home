@@ -1,0 +1,258 @@
+/* No design-inspiration mockup exists for the detail view (the README's mockups predate
+   Goal 5 entirely — they don't even show document uploads). Follows the visual language
+   already established by /intake and /queue: shell.module.css primitives, same card
+   treatment, same status badges. */
+
+.page {
+  composes: page from "../styles/shell.module.css";
+}
+
+.container {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.backLink {
+  composes: linkButton from "../styles/shell.module.css";
+  display: inline-block;
+  margin-bottom: 1rem;
+  text-decoration: none;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.refTitle {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.badge {
+  composes: badge from "../styles/shell.module.css";
+}
+
+.badgePENDING {
+  composes: badgePENDING from "../styles/shell.module.css";
+}
+
+.badgeIN_REVIEW {
+  composes: badgeIN_REVIEW from "../styles/shell.module.css";
+}
+
+.badgeAPPROVED {
+  composes: badgeAPPROVED from "../styles/shell.module.css";
+}
+
+.badgeREJECTED {
+  composes: badgeREJECTED from "../styles/shell.module.css";
+}
+
+.subline {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin: 0.4rem 0 0;
+}
+
+/* Privileged/redacted toggle */
+.viewToggle {
+  display: flex;
+  gap: 0.25rem;
+  background: #f3f4f6;
+  border-radius: 10px;
+  padding: 0.25rem;
+  flex-shrink: 0;
+}
+
+.viewToggleBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.85rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #4b5563;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.viewToggleBtn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.viewToggleBtnActiveRedacted {
+  background: #fff;
+  color: #92400e;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.viewToggleBtnActivePrivileged {
+  background: #fff;
+  color: #b91c1c;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.viewModeBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+.viewModeBannerRedacted {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.viewModeBannerPrivileged {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.toggleError {
+  composes: topLevelError from "../styles/shell.module.css";
+}
+
+/* Field sections */
+.section {
+  margin-top: 1.75rem;
+}
+
+.section:first-of-type {
+  margin-top: 0;
+}
+
+.sectionTitle {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+  font-weight: 700;
+  margin: 0 0 0.9rem;
+}
+
+.fieldGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.1rem 1.5rem;
+}
+
+.field {
+  min-width: 0;
+}
+
+.fieldLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.fieldValue {
+  font-size: 0.92rem;
+  word-break: break-word;
+}
+
+.fieldValueMasked {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  color: #92400e;
+}
+
+.bodyText {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.divider {
+  composes: divider from "../styles/shell.module.css";
+}
+
+/* Documents */
+.docRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid #f3f4f6;
+}
+
+.docRow:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.docIcon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #f3f4f6;
+  color: #4b5563;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.docMain {
+  min-width: 0;
+  flex: 1;
+}
+
+.docName {
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.docMeta {
+  color: #9ca3af;
+  font-size: 0.76rem;
+  margin-top: 0.1rem;
+}
+
+.docLink {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #111827;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.emptyText {
+  color: #9ca3af;
+  font-size: 0.88rem;
+}

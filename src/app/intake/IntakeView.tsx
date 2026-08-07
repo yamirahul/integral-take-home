@@ -5,6 +5,7 @@
 // intakes fetch stays server-side, only the interactive bits ship JS to the browser.
 
 import { useState, FormEvent } from "react";
+import Link from "next/link";
 import styles from "./intake.module.css";
 import AppHeader, { PATIENT_NAV } from "@/components/AppHeader";
 import { shortRef } from "@/lib/format";
@@ -363,7 +364,7 @@ export default function IntakeView({
             <p className={styles.listEmpty}>You haven&apos;t submitted any applications yet.</p>
           ) : (
             intakes.map((intake) => (
-              <div key={intake.id} className={styles.listRow}>
+              <Link key={intake.id} href={`/intake/${intake.id}`} className={styles.listRow}>
                 <div className={styles.listRowMain}>
                   <div className={styles.listRowTitle}>{shortRef(intake.id)}</div>
                   <div className={styles.listRowMeta}>
@@ -371,7 +372,7 @@ export default function IntakeView({
                   </div>
                 </div>
                 <StatusBadge status={intake.status} />
-              </div>
+              </Link>
             ))
           )}
         </div>

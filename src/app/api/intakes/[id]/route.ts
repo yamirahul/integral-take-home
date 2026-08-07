@@ -1,23 +1,52 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/current-user";
-
-// TODO(Goal 5): Implement GET — the full-record fetch with the privileged/redacted PII
-// toggle described in the README's Privacy Model. Until then, the Review Queue's "View"
-// action (src/app/queue/[id]/page.tsx) uses getSafeIntakeById() from src/lib/intakes.ts
-// directly rather than this route, the same way /intake's own page queries Prisma
-// server-side instead of calling its own API.
+import { getIntakeDetail } from "@/lib/intakes";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
+// GET /api/intakes/[id] — the full-record fetch behind the detail view.
+//   ?view=privileged  — Reviewer only: full, unmasked ssn/clientPhone/dateOfBirth.
+//   (anything else)   — default: those three fields masked (src/lib/redact.ts).
+// A Patient always gets their own data unmasked either way — `view` only matters for a
+// Reviewer looking at someone else's application.
+//
+// The detail page's initial server render always requests the redacted view — this
+// route is the ONLY path that ever returns unmasked PII to a Reviewer, and only in
+// direct response to an explicit request, never as a page-load default. That's also why
+// it's the one place worth a VIEWED audit entry: every time a Reviewer unmasks a SSN,
+// that access is logged, the same way a real compliance system would log it. Viewing the
+// already-redacted default isn't logged — it's not the sensitive action.
 export async function GET(request: Request, { params }: RouteParams) {
   const { id } = await params;
 
-  // TODO: Implement fetching single intake (Goal 5)
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+  }
 
-  return NextResponse.json({ message: `TODO: Implement GET /api/intakes/${id}` });
+  const { searchParams } = new URL(request.url);
+  const wantsPrivileged = searchParams.get("view") === "privileged";
+
+  const intake = await getIntakeDetail(id, user, { privileged: wantsPrivileged });
+  if (!intake) {
+    return NextResponse.json({ error: "Application not found." }, { status: 404 });
+  }
+
+  if (user.role === "REVIEWER" && wantsPrivileged) {
+    await prisma.auditLog.create({
+      data: {
+        action: "VIEWED",
+        details: JSON.stringify({ view: "privileged" }),
+        userId: user.id,
+        intakeId: id,
+      },
+    });
+  }
+
+  return NextResponse.json(intake);
 }
 
 // PATCH /api/intakes/[id] — currently handles Reviewer self-assignment only:

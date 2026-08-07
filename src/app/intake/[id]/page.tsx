@@ -1,25 +1,26 @@
-// The real Goal 5 detail view — replaces the Goal 4 placeholder. Server Component: reads
-// the session, fetches the intake via getIntakeDetail() (always `privileged: false` here
-// — see that function and GET /api/intakes/[id] for why the redacted view is the only
-// thing ever server-rendered) and its documents, then hands both to the shared
-// IntakeDetail component with the toggle enabled.
+// A patient's own application detail — same shared IntakeDetail component the Review
+// Queue uses, with the toggle turned off: per the README's Privacy Model, a Patient
+// always sees their own data complete and unmasked, so there's no "redacted" state to
+// toggle out of in the first place. getIntakeDetail() already enforces this regardless
+// of what `privileged` is passed (see its role check), and also enforces that a Patient
+// can only reach their own intakes — anyone else's id here 404s.
 import { redirect, notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/current-user";
 import { getIntakeDetail } from "@/lib/intakes";
 import { prisma } from "@/lib/prisma";
 import IntakeDetail from "@/components/IntakeDetail";
-import { REVIEWER_NAV } from "@/components/AppHeader";
+import { PATIENT_NAV } from "@/components/AppHeader";
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-export default async function QueueDetailPage({ params }: PageProps) {
+export default async function IntakeDetailPage({ params }: PageProps) {
   const { id } = await params;
 
   const user = await getCurrentUser();
   if (!user) redirect("/");
-  if (user.role !== "REVIEWER") redirect("/intake");
+  if (user.role !== "PATIENT") redirect("/queue");
 
   const [intake, documents] = await Promise.all([
     getIntakeDetail(id, user, { privileged: false }),
@@ -30,11 +31,11 @@ export default async function QueueDetailPage({ params }: PageProps) {
 
   return (
     <IntakeDetail
-      currentUser={{ name: user.name, role: "REVIEWER" }}
-      navItems={REVIEWER_NAV}
-      backHref="/queue"
-      backLabel="Back to Review Queue"
-      canToggle
+      currentUser={{ name: user.name, role: "PATIENT" }}
+      navItems={PATIENT_NAV}
+      backHref="/intake"
+      backLabel="Back to Your Applications"
+      canToggle={false}
       initialIntake={{
         id: intake.id,
         status: intake.status,

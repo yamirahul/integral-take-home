@@ -150,6 +150,32 @@ sign-in) — a table of every application, with stat-card counts by status, sear
   (privileged/redacted PII, status changes, audit trail) is Goal 5/6/7. Expect that file
   to be replaced when Goal 5 lands.
 
+### Detail View & the privileged/redacted toggle (Goal 5)
+
+`GET /api/intakes/[id]` is the one query in the app that ever requests `ssn`,
+`clientPhone`, `dateOfBirth`, `description`, or `notes` (`getIntakeDetail()` in
+`src/lib/intakes.ts`) — everything else (Goal 4's lists) deliberately never fetches them.
+
+- **The toggle is a real server round trip, not a client-side hide/show.** A page load
+  always fetches the redacted view — masked `ssn`/`clientPhone`/`dateOfBirth`
+  (`src/lib/redact.ts`) never touch the initial HTML or RSC payload for a Reviewer.
+  Clicking "Privileged View" makes a fresh `GET /api/intakes/[id]?view=privileged`
+  request; only then does the server send the unmasked fields. A pure client-side toggle
+  that just hid already-loaded PII would defeat the point — it'd still be sitting in the
+  page source and React DevTools even while "hidden."
+- Every `?view=privileged` request from a Reviewer writes a `VIEWED` audit log entry
+  (`{ view: "privileged" }`) — the sensitive action (unmasking someone's SSN) is what's
+  worth recording, the way a real compliance system logs "break-glass" access. Viewing
+  the default redacted state isn't logged.
+- A Patient's own detail page (`/intake/[id]`) reuses the same `IntakeDetail` component
+  with the toggle turned off — the README's Privacy Model says a Patient always sees
+  their own data complete and unmasked, so there's no redacted state to switch out of.
+  `getIntakeDetail()` enforces this at the data layer regardless of what's requested, not
+  just in the UI.
+- Supporting documents are listed on the detail page (both roles) and are clickable —
+  each opens `GET /api/documents/[id]/file` (already auth-gated, unchanged from Goal 3)
+  in a new tab.
+
 ## Demo Users
 
 The database is seeded with two demo users. Both use the password `password123`
@@ -173,7 +199,9 @@ src/
 │   ├── intake/
 │   │   ├── page.tsx          # Server Component: auth + initial data for /intake
 │   │   ├── IntakeView.tsx    # Enrollment form, success screen, "Your Applications" list
-│   │   └── intake.module.css
+│   │   ├── intake.module.css
+│   │   └── [id]/
+│   │       └── page.tsx      # Patient's own detail view — IntakeDetail with the toggle off (Goal 5)
 │   ├── documents/
 │   │   ├── page.tsx          # Server Component: auth + initial data for /documents
 │   │   ├── DocumentsView.tsx # Upload form + per-patient document library (Goal 3)
@@ -183,7 +211,7 @@ src/
 │   │   ├── QueueView.tsx     # Stat cards, search/filter, table, self-assign (Goal 4)
 │   │   ├── queue.module.css
 │   │   └── [id]/
-│   │       └── page.tsx      # Placeholder detail view — real one is Goal 5
+│   │       └── page.tsx      # Reviewer's detail view — IntakeDetail with the toggle on (Goal 5)
 │   └── api/
 │       ├── auth/
 │       │   ├── login/route.ts    # POST — verify credentials, set session cookie
@@ -192,7 +220,7 @@ src/
 │       ├── intakes/
 │       │   ├── route.ts          # GET (role-scoped list) / POST (create) intakes
 │       │   └── [id]/
-│       │       └── route.ts      # GET single intake (stub — Goal 5) / PATCH self-assign (Goal 4, extends for Goal 6)
+│       │       └── route.ts      # GET (privileged/redacted toggle, Goal 5) / PATCH self-assign (Goal 4, extends for Goal 6)
 │       ├── documents/
 │       │   ├── route.ts          # GET (library) / POST (upload) documents
 │       │   ├── attach/route.ts   # POST — reuse an existing document on another intake
@@ -206,13 +234,15 @@ src/
 │   ├── AppHeader.module.css
 │   ├── LogoutButton.tsx
 │   ├── AuditLog.tsx          # Audit trail display (stub — Goal 7)
-│   └── IntakeDetail.tsx      # Privileged/redacted detail view (stub — Goal 5)
+│   ├── IntakeDetail.tsx      # Shared detail view, used by both /queue/[id] and /intake/[id] (Goal 5)
+│   └── IntakeDetail.module.css
 ├── lib/
 │   ├── prisma.ts             # Prisma client singleton
 │   ├── auth.ts               # Password hashing (scrypt)
 │   ├── session.ts            # Signed session cookie (Web Crypto — Edge + Node safe)
 │   ├── current-user.ts       # getCurrentUser() for Server Components/route handlers
-│   ├── intakes.ts            # Shared safe-field intake queries (list + single) — see Goal 4 above
+│   ├── intakes.ts            # Shared intake queries: safe-field lists (Goal 4) + full detail w/ redaction (Goal 5)
+│   ├── redact.ts             # SSN/phone/DOB masking for a Reviewer's redacted view (Goal 5)
 │   ├── documents.ts          # Content-addressed file storage (server-only, Node fs/crypto)
 │   ├── format.ts             # Client-safe display formatting (shortRef, formatFileSize, formatDateTime)
 │   └── intake-status.ts      # Shared IntakeStatus type + labels
@@ -227,9 +257,9 @@ dev.db                        # SQLite database (repo root)
 ```
 
 `GET /api/users` was implemented as the starting reference for the Prisma + route handler
-pattern. Auth (Goal 1), the enrollment form (Goal 2), document uploads (Goal 3), and the
-review queue (Goal 4) are now built; detail-view/status-updates/audit-trail (Goals 5-7)
-are still stubs.
+pattern. Auth (Goal 1), the enrollment form (Goal 2), document uploads (Goal 3), the
+review queue (Goal 4), and the detail view (Goal 5) are now built; status-updates/
+audit-trail (Goals 6-7) are still stubs.
 
 ## Goals
 
